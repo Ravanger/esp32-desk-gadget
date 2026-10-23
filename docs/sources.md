@@ -98,3 +98,7 @@ resolution used in this project is noted.
 
 - Weather data: Open-Meteo, free for non-commercial use.
 - Time: NTP (`pool.ntp.org`, `time.nist.gov`).
+
+---
+
+[← Previous: Troubleshooting](troubleshooting.md) · [Contents](../README.md) · [Next: Verified specifications →](verified-specs.md)
