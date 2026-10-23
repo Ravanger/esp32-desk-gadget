@@ -1,15 +1,15 @@
 # Wiring — ESP32-C3 SuperMini
 
-This build is for the **ESP32-C3 SuperMini**, not a classic ESP32 dev
-board. The old pin numbers in earlier drafts (SDA 21 / SCL 22, encoder
-25 / 26 / 27, pot on GPIO 34) **do not exist on this board** — do not
-use them. The SuperMini breaks out only 13 GPIOs: 0, 1, 2, 3, 4, 5, 6,
-7, 8, 9, 10, 20, 21.
+This build is for the **ESP32-C3 SuperMini**, not a classic ESP32
+development board. Pin numbers from classic ESP32 guides (SDA 21 /
+SCL 22, encoder 25 / 26 / 27, pot on GPIO 34) **do not exist on this
+board** — do not use them. The SuperMini breaks out only 13 GPIOs:
+0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 20, 21.
 
 Everything except the optional PIR runs at 3.3 V from the SuperMini's
 3V3 pin — the HC-SR501's VCC goes to the 5V pin (its OUT pin is still
-3.3 V logic, safe for GPIO 0). Wire it unpowered, double-check against
-the table, then plug in USB-C.
+3.3 V logic, safe for GPIO 0). Wire the circuit unpowered,
+double-check every connection against the table, then plug in USB-C.
 
 | Module | Module pin | Connects to | Why / notes |
 | ------ | ---------- | ----------- | ----------- |
@@ -28,9 +28,9 @@ the table, then plug in USB-C.
 | Potentiometer (10K) | End 1 | SuperMini 3V3 | Must be an ADC1 pin: GPIO 1 is ADC1_CH1. Do **not** use GPIO 5 for the pot — GPIO 5 is ADC2, and ADC2 readings are unreliable while WiFi is on. |
 | | Wiper (middle) | SuperMini GPIO 1 | |
 | | End 2 | SuperMini GND | |
-| PIR (optional) | VCC | SuperMini 5V | HC-SR501 wants 5 V in; its OUT pin is 3.3 V logic, safe for the SuperMini. Only add after the base build works. |
+| PIR (optional) | VCC | SuperMini 5V | HC-SR501 requires 5 V input; its OUT pin is 3.3 V logic, safe for the SuperMini. Only add after the base build works. |
 | | GND | SuperMini GND | |
-| | OUT | SuperMini GPIO 0 | GPIO 0–5 are RTC GPIOs, so this pin can also wake the chip from deep sleep later. |
+| | OUT | SuperMini GPIO 0 | GPIO 0–5 are RTC GPIOs, so this pin can also wake the chip from deep sleep in a future variant. |
 
 ## ⚠ The C3 SuperMini I2C trap — read this before wiring the OLED
 
@@ -55,9 +55,11 @@ output stays available.
 If your OLED stays black, check in this order: SDA/SCL are on GPIO 4/5
 (not 8/9, not 21/22), the sketch's `Wire.begin(4, 5)` matches, the I2C
 address is 0x3C (a few modules are 0x3D), and VCC is on 3V3, not 5V.
-The SuperMini's printed labels can vary slightly by manufacturer —
-always go by the GPIO number, and compare the board in your hand with
-its printed labels before wiring.
+SuperMini board variants differ slightly (standard boards have a
+simple blue LED on GPIO 8; "Plus" variants have a WS2812 RGB LED on
+GPIO 8), and printed labels can vary by manufacturer — always go by
+the GPIO number, and compare the board in hand with its printed labels
+before wiring. Either way, GPIO 8 stays unused in this build.
 
 ![Wiring diagram from MakerGuides connecting an ESP32-Lite to an SSD1306 OLED](../assets/esp32-oled-wiring.png)
 
