@@ -5,7 +5,7 @@ ESP32 starter kit, the encoder is #15 in the 45-in-1 sensor kit.
 
 | Qty | Part | From | Notes |
 | --- | ---- | ---- | ----- |
-| 1 | ESP32 development board | Starter kit | Any classic ESP32 dev board. Note its printed SDA/SCL pins before wiring — see [wiring.md](wiring.md). |
+| 1 | ESP32-C3 SuperMini | Starter kit | Single-core RISC-V, 160 MHz, 4 MB flash, USB-C, native USB. Only 13 GPIOs are broken out (0–10, 20, 21) — every pin in this guide is a SuperMini pin. See [wiring.md](wiring.md). |
 | 1 | 0.96″ OLED, SSD1306, 128×64, I2C | Starter kit | 4 pins: GND / VCC / SCL / SDA. I2C address 0x3C (a few boards are 0x3D — see [troubleshooting.md](troubleshooting.md)). |
 | 1 | DHT11 temperature + humidity module | Starter kit | The 3-pin module version (built-in pull-up), not the bare 4-pin sensor. |
 | 1 | Rotary encoder module (CLK / DT / SW) | 45-in-1 kit, #15 | Incremental encoder with push button. The navigation control. |
@@ -13,7 +13,7 @@ ESP32 starter kit, the encoder is #15 in the 45-in-1 sensor kit.
 | 1 | Breadboard, 830 tie-points | Starter kit | Big enough for everything with room to spare. |
 | ~15 | Jumper wires (M-M) | Bench stock | Count the wiring table in [wiring.md](wiring.md). |
 | 1 | Micro USB cable | Starter kit | Must be a data cable, not charge-only — it carries power and the firmware upload. |
-| 1 | HC-SR501 PIR motion sensor (optional) | Starter kit | Only for the wake/sleep extra. Skip it on the first build. |
+| 1 | HC-SR501 PIR motion sensor (optional) | Starter kit | Only for the wake/sleep extra. Skip it on the first build. On the SuperMini it goes to GPIO 0, with VCC on the 5V pin. |
 
 ![ESP32 development board, similar to the one in this build](https://www.makerguides.com/wp-content/uploads/2023/10/Lolin32_lite.jpg)
 
