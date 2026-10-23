@@ -79,3 +79,7 @@ header, the corresponding library is missing from the Library Manager
 list above — install it and recompile. If compilation fails on
 `JsonDocument`, the installed ArduinoJson version is older than v7;
 update it.
+
+---
+
+[← Previous: Wiring](wiring.md) · [Contents](../README.md) · [Next: How it works →](how-it-works.md)
