@@ -1,8 +1,13 @@
 // ============================================================
 // ESP32 Desk Gadget — clock + indoor DHT11 + Toronto weather
+// Board: ESP32-C3 SuperMini (select "ESP32C3 Dev Module" in the IDE,
+// and enable Tools > USB CDC On Boot so Serial output shows over
+// the SuperMini's native USB-C connection).
 // OLED SSD1306 128x64 I2C (0x3C) | encoder pages | pot dimming
 // Weather: Open-Meteo (no API key). Time: NTP, America/Toronto.
 // See README.md and docs/ in this repo for wiring and build order.
+// Pins are SuperMini-specific: I2C on GPIO 4/5 (NOT the risky
+// strapping pins GPIO 8/9), encoder on 6/7/10, pot on ADC1 GPIO 1.
 // ============================================================
 #include <WiFi.h>
 #include <HTTPClient.h>
@@ -17,16 +22,16 @@
 const char* WIFI_SSID = "YOUR_WIFI_NAME";
 const char* WIFI_PASSWORD = "YOUR_WIFI_PASSWORD";
 
-// ---------- Pins (see docs/wiring.md) ----------
-#define OLED_SDA 21  // most dev boards; confirm yours!
-#define OLED_SCL 22
-#define DHT_PIN 4
-#define ENC_CLK 25
-#define ENC_DT 26
-#define ENC_SW 27
-#define POT_PIN 34  // ADC1, input-only: ideal for a pot
-#define PIR_PIN 13  // optional, only if USE_PIR is 1
-#define USE_PIR 0   // set to 1 after wiring the PIR
+// ---------- Pins, ESP32-C3 SuperMini (see docs/wiring.md) ----------
+#define OLED_SDA 4   // I2C via GPIO matrix; NOT GPIO 8 (strapping + onboard LED)
+#define OLED_SCL 5   // NOT GPIO 9 (strapping + BOOT button)
+#define DHT_PIN 3
+#define ENC_CLK 6
+#define ENC_DT 7
+#define ENC_SW 10
+#define POT_PIN 1    // ADC1_CH1. Do NOT use GPIO 5 (ADC2) for the pot: ADC2 is unreliable while WiFi is on.
+#define PIR_PIN 0    // optional, only if USE_PIR is 1; GPIO 0-5 are RTC GPIOs
+#define USE_PIR 0    // set to 1 after wiring the PIR
 
 // ---------- Weather: Toronto via Open-Meteo (no key) ----------
 const char* WEATHER_URL =
