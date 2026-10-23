@@ -49,7 +49,12 @@ All configuration is in one block at the top of the sketch:
    `America/Toronto`, `Europe/London`, `Asia/Tokyo`), and
    `LOCATION_NAME` as the short label shown on the outdoor screen.
    Coordinates can be found via the Open-Meteo geocoding API or any
-   map service.
+   map service. The sketch sends coordinates to 4 decimal places
+   (about 11 m precision). Keep `LOCATION_NAME` short — about 8
+   characters at most: the outdoor header is `"<NAME> - OPEN-METEO"`
+   at text size 1 (6 px per character) on a 128 px display, so a
+   longer name clips off-screen and the sketch does not truncate it
+   for you.
 3. **Local time** — `TIMEZONE_POSIX`, the POSIX time-zone string for
    the clock (for example `EST5EDT,M3.2.0,M11.1.0` for Eastern Time,
    `GMT0BST,M3.5.0,M10.5.0` for UK time). This is separate from the
@@ -69,8 +74,14 @@ needs editing for a standard build.
 3. Upload. If the board does not enter download mode, hold the BOOT
    button (GPIO 9) while starting the upload, or hold BOOT while
    plugging in USB.
-4. Open Serial Monitor at 115200 baud to check for startup messages
-   (OLED detection, WiFi connection, weather fetch results).
+4. Open Serial Monitor at 115200 baud to check for startup messages.
+   The sketch prints only the OLED error (if the display is not
+   found), "WiFi: connecting..." then "WiFi: connected" or
+   "WiFi: connection failed (30 s timeout)", and weather HTTP/parse
+   errors — it does not print a running WiFi status log. A WiFi
+   failure does not stop the sketch: after the 30 s timeout it
+   continues, and NTP/weather recover on their own when WiFi comes
+   up.
 
 ## Verifying the libraries
 
