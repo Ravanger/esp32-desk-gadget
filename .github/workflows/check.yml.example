@@ -1,0 +1,31 @@
+# OPT-IN ONLY — do not enable by default.
+#
+# This repository is private, and GitHub Actions is metered for
+# private repos (included allowance only, then billed per minute).
+# To enable this workflow:
+#   1. Copy this file to .github/workflows/check.yml
+#   2. Set the account spending limit to $0 so workflows stop
+#      instead of billing once the allowance is used.
+#   3. Keep Linux runners only — never macOS or Windows runners
+#      for this project (they burn the allowance at a multiplier).
+#
+# By default, run scripts/check.sh locally instead: it needs no
+# hosted runner and costs nothing. See AGENTS.md.
+
+name: check
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Run guardrail checks
+        run: python3 scripts/check.sh
