@@ -86,15 +86,6 @@ All user-specific settings live in one block at the top of the sketch:
 The values shipped in the sketch are an example configuration; replace
 them with the target location before use.
 
-## What this build deliberately does not need
-
-- No host-side program: the board talks to the internet itself over
-  WiFi; USB only supplies power.
-- No weather API key: Open-Meteo is keyless. At one fetch every
-  10 minutes, this project makes 144 requests per day, well within
-  Open-Meteo's non-commercial allowance.
-- No batteries and no soldering.
-
 Optional, after the base build works: an HC-SR501 PIR on GPIO 0 can
 blank the display when the room is quiet and wake it on motion. Enable
 it with the `USE_PIR` flag in the sketch.
@@ -120,28 +111,6 @@ to a single page:
    and image credits
 8. [Verified specifications](docs/verified-specs.md) — checked facts,
    with sources and dates, that agents must not change from memory
-
-## Contributing
-
-Issues and pull requests are welcome. When reporting a wiring or
-firmware problem, include the board variant, the sketch version, and
-the Serial Monitor output.
-
-Agents and contributors: read [AGENTS.md](AGENTS.md) first. It states
-the frozen SuperMini pin assignment, the rules that keep this guide
-general-purpose, and the verification required before a change is
-claimed done. Run the local guardrail checks before pushing:
-
-```
-python3 scripts/check.sh
-```
-
-Checks run locally by default — no hosted CI is enabled, because
-this repository is private and GitHub Actions is metered for private
-repos. See AGENTS.md for the opt-in CI instructions and the $0
-spending-limit requirement. Verified specifications, with sources
-and check dates, live in
-[docs/verified-specs.md](docs/verified-specs.md).
 
 ## Sources
 
