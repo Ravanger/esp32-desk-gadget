@@ -1,9 +1,15 @@
 # ESP32 Desk Gadget: Clock, Room & Weather on One Little Screen
 
-A multi-screen desktop display built from the ESP32 starter kit and the
-45-in-1 sensor kit. It shows the time, your room's temperature and humidity,
-and Toronto's outdoor weather from the internet — powered by USB from your
-PC, with nothing to install on the PC, no account, and no API key.
+A multi-screen desktop display built from the ESP32-C3 SuperMini in
+the ESP32 starter kit and the 45-in-1 sensor kit. It shows the time,
+your room's temperature and humidity, and Toronto's outdoor weather
+from the internet — powered by USB-C from your PC, with nothing to
+install on the PC, no account, and no API key.
+
+> **Board:** ESP32-C3 SuperMini. All pins in this repo are SuperMini
+> pins (I2C on GPIO 4/5, encoder on 6/7/10, pot on ADC1 GPIO 1). Pins
+> from classic ESP32 guides (21/22, 25/26/27, 34) do not apply here —
+> see [docs/wiring.md](docs/wiring.md).
 
 - **Time to build:** ~1 evening
 - **Soldering:** none — breadboard only
@@ -16,7 +22,7 @@ PC, with nothing to install on the PC, no account, and no API key.
 | Screen | Shows | Data source | Refresh |
 | ------ | ----- | ----------- | ------- |
 | 1 · Clock | Time (HH:MM), seconds, day and date | NTP over WiFi, America/Toronto | Every second |
-| 2 · Indoor | Room temperature + relative humidity | DHT11 on GPIO 4 | Every 2 seconds |
+| 2 · Indoor | Room temperature + relative humidity | DHT11 on GPIO 3 | Every 2 seconds |
 | 3 · Toronto weather | Outdoor temp, humidity, condition, wind | Open-Meteo API (no key) | Every 10 minutes |
 | 4 · Summary / settings | All key numbers at a glance, brightness value, WiFi status, uptime | Everything above | Every second |
 
@@ -46,7 +52,7 @@ the PC only supplies USB power). No OpenWeatherMap account or API key —
 the MakerGuides weather-station pattern is kept, but the data source is
 swapped to Open-Meteo, which is keyless. No batteries, no soldering.
 
-Optional extra, later: an HC-SR501 PIR (from the starter kit) on GPIO 13
+Optional extra, later: an HC-SR501 PIR (from the starter kit) on GPIO 0
 wakes the display when you sit down and blanks it when you leave — the
 sketch has a switch for it (`USE_PIR`).
 
