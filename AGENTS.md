@@ -74,8 +74,9 @@ conflicts with a general instruction, this file wins for this repo.
 
 ## Verification before claiming
 
-- Run `scripts/check.sh` before pushing, and include its output in
-  the change summary. A change that fails the checks is not done.
+- Run `python3 scripts/check.sh` before pushing, and include its
+  output in the change summary. A change that fails the checks is
+  not done.
 - If the check script cannot run a compile check (no Arduino CLI /
   PlatformIO available), say so explicitly; do not claim the sketch
   compiles.
