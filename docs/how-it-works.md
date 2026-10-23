@@ -132,9 +132,15 @@ An OLED pixel makes its own light, so there's no backlight knob.
 Brightness is set by the SSD1306's contrast register: send
 `SSD1306_SETCONTRAST` followed by a value from 0–255. (The ThingPulse
 driver exposes the same thing as `setContrast()` / `setBrightness()`.)
-The sketch reads the pot on GPIO 34 — the ESP32 ADC returns 0–4095 —
-and maps it straight onto 0–255, with a floor of 8 so the screen never
-goes fully invisible mid-adjustment.
+The sketch reads the pot on GPIO 1 — the ESP32-C3 ADC is 12-bit, so it
+returns 0–4095 — and maps it straight onto 0–255, with a floor of 8 so
+the screen never goes fully invisible mid-adjustment.
+
+The pot must be on an ADC1 pin (GPIO 0–4 on the C3). GPIO 5 is ADC2,
+and ADC2 readings go unreliable once WiFi is running — which is always,
+on this build. That's why the pot is on GPIO 1, even though GPIO 5 is
+also used in this build as the I2C clock line (digital use of GPIO 5
+is fine; analog use is the problem).
 
 Two warnings: at very low contrast the display can look patchy rather
 than elegantly dim — that's the panel, not your wiring — and for true
