@@ -14,20 +14,23 @@ goes on. Total wiring is only ~15 jumpers, so this goes fast.
    - **Test:** text on the OLED, and Serial Monitor (115200 baud) shows
      no "OLED not found" error. Black screen? Jump to
      [troubleshooting.md](troubleshooting.md) row 1 before continuing.
-2. **WiFi + clock.** Fill in your WiFi credentials, upload, and turn to
-   page 1 (the clock is the default page).
-   - **Test:** the clock shows the correct Toronto time within a few
+2. **WiFi + clock.** Fill in the WiFi credentials, location, and
+   time-zone settings from
+   [libraries-and-setup.md](libraries-and-setup.md), upload, and stay
+   on page 1 (the clock is the default page).
+   - **Test:** the clock shows the correct local time within a few
      seconds of boot and the seconds tick. Wrong by whole hours =
-     timezone string; stuck at `--:--` = WiFi or NTP blocked.
+     time-zone string; stuck at `--:--` = WiFi or NTP blocked.
 3. **Add the DHT11.** Power down, add its 3 wires (DATA to GPIO 3),
    power up, rotate to the Indoor page.
    - **Test:** plausible room readings appear within ~4 seconds and
      update every 2 s. Breathe on the sensor — humidity should climb.
      "No reading" persisting = [troubleshooting.md](troubleshooting.md)
      row 2.
-4. **Outdoor weather.** No new wiring — rotate to the Toronto page.
+4. **Outdoor weather.** No new wiring — rotate to the outdoor page.
    Also paste the Open-Meteo URL from [how-it-works.md](how-it-works.md)
-   into a browser once, so you've seen the JSON the code is parsing.
+   (with the configured coordinates and time zone filled in) into a
+   browser once, to see the JSON the code is parsing.
    - **Test:** the page fills in on the first fetch (it runs once at
      boot) and the numbers match the browser's JSON. Serial Monitor
      prints the HTTP code if the fetch fails.
@@ -43,16 +46,16 @@ goes on. Total wiring is only ~15 jumpers, so this goes fast.
 
      What a working encoder looks like in the Serial Monitor, from the
      LastMinuteEngineers tutorial: direction (CW/CCW) and a counter that
-     goes up one way and down the other. If you add a temporary
-     `Serial.print` of your page number, yours should behave the same
-     way. Screenshot: LastMinuteEngineers.
+     goes up one way and down the other. Adding a temporary
+     `Serial.print` of the page number should show the same behaviour.
+     Screenshot: LastMinuteEngineers.
 6. **Add the potentiometer.** Power down, wire the pot (ends to
    3V3/GND, wiper to GPIO 1), power up.
    - **Test:** turning the pot sweeps the OLED from dim to full
      brightness, smoothly, on every page. The Summary page's "Bright"
      value should track it from ~8 to 255.
-7. **Leave it running.** Park it on the Clock page, powered from the
-   PC's USB. Check it again in 15 minutes.
+7. **Leave it running.** Park it on the Clock page, powered over
+   USB-C. Check it again in 15 minutes.
    - **Test:** clock still correct, weather page has refreshed at least
      once, indoor page still updating, knob and pot still responsive
      (this is the check that would catch a blocking `delay()` if one
