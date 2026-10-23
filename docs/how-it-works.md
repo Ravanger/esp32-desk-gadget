@@ -101,7 +101,8 @@ subset with this table:
 | 45 | Fog | 77 | Snow grains |
 | 48 | Icy fog (rime fog) | 80 / 81 / 82 | Rain showers (slight / moderate / violent) |
 | 51 / 53 / 55 | Drizzle (light / moderate / dense) | 85 / 86 | Snow showers (slight / moderate-heavy) |
-| 95 | Thunderstorm | 96 / 99 | Thunderstorm with hail (slight / heavy) |
+| 95 | Thunderstorm | 96 | Thunderstorm with slight hail |
+| 97 | Heavy thunderstorm | 99 | Thunderstorm with heavy hail |
 
 Any code outside this table shows as `-` on the screen, which is the
 safe fallback if Open-Meteo ever adds a code.
