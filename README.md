@@ -103,7 +103,23 @@ it with the `USE_PIR` flag in the sketch.
 
 Documentation lives in `docs/`, next to the code, so the guide and the
 firmware cannot drift apart. Each file in `docs/` is written as a
-standalone page.
+standalone page, and every page ends with Previous / Contents / Next
+links in the order below, so you can read straight through or jump
+to a single page:
+
+1. [Parts](docs/parts.md) — components and quantities
+2. [Wiring](docs/wiring.md) — wiring table, including the I2C-pin warning
+3. [Libraries & setup](docs/libraries-and-setup.md) — Arduino IDE and
+   PlatformIO, plus configuration (WiFi, location, time zone)
+4. [How it works](docs/how-it-works.md) — NTP clock, DHT11, Open-Meteo,
+   encoder, dimming
+5. [Build order](docs/build-order.md) — staged build, with a test after
+   each stage
+6. [Troubleshooting](docs/troubleshooting.md) — symptoms, causes, fixes
+7. [Sources & credits](docs/sources.md) — guides this project draws on,
+   and image credits
+8. [Verified specifications](docs/verified-specs.md) — checked facts,
+   with sources and dates, that agents must not change from memory
 
 ## Contributing
 
@@ -134,3 +150,7 @@ Espressif documentation, and Open-Meteo — full list and image credits
 in [docs/sources.md](docs/sources.md). Photos and wiring diagrams in
 `assets/` are from those guides, credited under each image; none are
 photos of this specific build. Weather data: Open-Meteo.
+
+---
+
+[Next: Parts →](docs/parts.md)
