@@ -1,63 +1,77 @@
-# Wiring
+# Wiring — ESP32-C3 SuperMini
 
-Everything except the optional PIR runs at 3.3 V from the ESP32's 3V3
-pin — the HC-SR501's VCC goes to 5V/VIN (its OUT pin is still 3.3 V
-logic, safe for GPIO 13). Wire it unpowered, double-check against the
-table, then plug in USB.
+This build is for the **ESP32-C3 SuperMini**, not a classic ESP32 dev
+board. The old pin numbers in earlier drafts (SDA 21 / SCL 22, encoder
+25 / 26 / 27, pot on GPIO 34) **do not exist on this board** — do not
+use them. The SuperMini breaks out only 13 GPIOs: 0, 1, 2, 3, 4, 5, 6,
+7, 8, 9, 10, 20, 21.
+
+Everything except the optional PIR runs at 3.3 V from the SuperMini's
+3V3 pin — the HC-SR501's VCC goes to the 5V pin (its OUT pin is still
+3.3 V logic, safe for GPIO 0). Wire it unpowered, double-check against
+the table, then plug in USB-C.
 
 | Module | Module pin | Connects to | Why / notes |
 | ------ | ---------- | ----------- | ----------- |
-| OLED (SSD1306) | VCC | ESP32 3V3 | I2C bus. Only two signal wires for the whole display. |
-| | GND | ESP32 GND | |
-| | SDA | ESP32 GPIO 21 | |
-| | SCL | ESP32 GPIO 22 | |
-| DHT11 | VCC | ESP32 3V3 | The module version includes its own pull-up resistor. |
-| | GND | ESP32 GND | |
-| | DATA (OUT) | ESP32 GPIO 4 | |
-| Rotary encoder | + / VCC | ESP32 3V3 | All three signal pins use INPUT_PULLUP in code. If your module has no "+" pin, it's a bare encoder: wire CLK/DT/SW the same and skip power. |
-| | GND | ESP32 GND | |
-| | CLK | ESP32 GPIO 25 | |
-| | DT | ESP32 GPIO 26 | |
-| | SW | ESP32 GPIO 27 | |
-| Potentiometer (10K) | End 1 | ESP32 3V3 | GPIO 34 is input-only and ADC1 — perfect for a pot, and ADC1 keeps working while WiFi is on (ADC2 doesn't). |
-| | Wiper (middle) | ESP32 GPIO 34 | |
-| | End 2 | ESP32 GND | |
-| PIR (optional) | VCC | ESP32 5V / VIN | HC-SR501 wants 5 V in; its OUT pin is 3.3 V logic, safe for the ESP32. Only add after the base build works. |
-| | GND | ESP32 GND | |
-| | OUT | ESP32 GPIO 13 | |
+| OLED (SSD1306) | VCC | SuperMini 3V3 | I2C bus. Only two signal wires for the whole display. |
+| | GND | SuperMini GND | |
+| | SDA | SuperMini GPIO 4 | See the I2C warning below — deliberately **not** GPIO 8. |
+| | SCL | SuperMini GPIO 5 | Deliberately **not** GPIO 9. |
+| DHT11 | VCC | SuperMini 3V3 | The module version includes its own pull-up resistor. |
+| | GND | SuperMini GND | |
+| | DATA (OUT) | SuperMini GPIO 3 | Digital input; GPIO 3 is also ADC1_CH3, but here it's used digitally. |
+| Rotary encoder | + / VCC | SuperMini 3V3 | All three signal pins use INPUT_PULLUP in code. If your module has no "+" pin, it's a bare encoder: wire CLK/DT/SW the same and skip power. |
+| | GND | SuperMini GND | |
+| | CLK | SuperMini GPIO 6 | |
+| | DT | SuperMini GPIO 7 | |
+| | SW | SuperMini GPIO 10 | Safe, non-strapping GPIO. |
+| Potentiometer (10K) | End 1 | SuperMini 3V3 | Must be an ADC1 pin: GPIO 1 is ADC1_CH1. Do **not** use GPIO 5 for the pot — GPIO 5 is ADC2, and ADC2 readings are unreliable while WiFi is on. |
+| | Wiper (middle) | SuperMini GPIO 1 | |
+| | End 2 | SuperMini GND | |
+| PIR (optional) | VCC | SuperMini 5V | HC-SR501 wants 5 V in; its OUT pin is 3.3 V logic, safe for the SuperMini. Only add after the base build works. |
+| | GND | SuperMini GND | |
+| | OUT | SuperMini GPIO 0 | GPIO 0–5 are RTC GPIOs, so this pin can also wake the chip from deep sleep later. |
 
-## ⚠ Check your board's I2C pins before you wire the OLED
+## ⚠ The C3 SuperMini I2C trap — read this before wiring the OLED
 
-On most ESP32 dev boards the default I2C pins are SDA = GPIO 21,
-SCL = GPIO 22, and that's what the table above and the code use. But
-it's a board default, not a law: the MakerGuides weather station used an
-ESP32-Lite whose defaults are SDA 19 / SCL 23 — look at their wiring
-photo below and you'll see exactly those labels. If your OLED stays
-black, this mismatch (or SDA/SCL simply swapped) is the first suspect.
+On the ESP32-C3, I2C is **not** fixed to specific pins at chip level —
+it runs through the GPIO matrix, so the sketch must say which pins to
+use, and it does: `Wire.begin(4, 5)`.
 
-Not sure what your board uses? Run this sketch and the Serial Monitor
-will tell you:
+Do **not** use the pins many online guides call the "default" I2C
+pins, GPIO 8 / GPIO 9:
 
-```cpp
-void setup() { Serial.begin(115200); }
-void loop() {
-  Serial.printf("SDA = GPIO %d  SCL = GPIO %d\n", SDA, SCL);
-  delay(2000);
-}
-```
+- **GPIO 8** is a strapping pin, and on most SuperMini boards it also
+  drives the onboard LED (WS2812 on some variants). Using it for SDA
+  fights the LED and can disturb boot.
+- **GPIO 9** is a strapping pin and the BOOT button: pulling it low at
+  reset puts the chip in download mode instead of running your program.
+  An I2C device pulling SCL low at the wrong moment can do exactly that.
+
+The third strapping pin, **GPIO 2**, is likewise left unused in this
+build. GPIO 20 / 21 (UART0 RX/TX) are also left free, so Serial debug
+output stays available.
+
+If your OLED stays black, check in this order: SDA/SCL are on GPIO 4/5
+(not 8/9, not 21/22), the sketch's `Wire.begin(4, 5)` matches, the I2C
+address is 0x3C (a few modules are 0x3D), and VCC is on 3V3, not 5V.
+The SuperMini's printed labels can vary slightly by manufacturer —
+always go by the GPIO number, and compare the board in your hand with
+its printed labels before wiring.
 
 ![Wiring diagram from MakerGuides connecting an ESP32-Lite to an SSD1306 OLED](../assets/esp32-oled-wiring.png)
 
-ESP32 → OLED wiring. Four wires: GND, 3.3 V, SCL, SDA. Note the
-SDA 19 / SCL 23 labels on this particular board — yours is most likely
-21 / 22; wire to your board's pins. Diagram: MakerGuides.
+ESP32 → OLED wiring from MakerGuides. Four wires: GND, 3.3 V, SCL, SDA
+— but note this diagram is for an ESP32-Lite (SDA 19 / SCL 23) and is
+shown here only for the four-wire pattern. On the SuperMini, use
+SDA GPIO 4 / SCL GPIO 5. Diagram: MakerGuides.
 
 ![Wiring diagram from LastMinuteEngineers connecting a rotary encoder module to an ESP32](../assets/encoder-wiring.png)
 
 Rotary encoder → ESP32. The reference wiring from LastMinuteEngineers
 uses different GPIOs than this guide; keep the pattern (CLK, DT, SW each
 to a GPIO, module powered from the board) and use this guide's pins:
-CLK 25, DT 26, SW 27. Diagram: LastMinuteEngineers.
+CLK 6, DT 7, SW 10. Diagram: LastMinuteEngineers.
 
 ![Rotary encoder module pinout: GND, +, SW, DT, CLK](https://lastminuteengineers.com/wp-content/uploads/arduino/rotary-encoder-module-pinout.png)
 
@@ -68,9 +82,11 @@ LastMinuteEngineers.
 
 ## Swapping the encoder for something else
 
-A tactile button between GPIO 27 and GND (with INPUT_PULLUP) steps to
+A tactile button between GPIO 10 and GND (with INPUT_PULLUP) steps to
 the next page per press. A TTP223 touch module wires VCC→3V3, GND→GND,
-OUT→GPIO 27 and behaves like that button. A bare capacitive touch pad
-is just a wire or foil on GPIO 15 using the ESP32's built-in touch
-peripheral — no module at all. The encoder is still the nicest of the
-four: it goes backwards as well as forwards.
+OUT→GPIO 10 and behaves like that button.
+
+Note: the classic ESP32's bare capacitive-touch trick does **not**
+work here — the ESP32-C3 has no capacitive touch peripheral, unlike
+the classic ESP32. On this board, touch means the TTP223 module, not a
+bare wire or foil pad.
