@@ -112,28 +112,6 @@ to a single page:
 8. [Verified specifications](docs/verified-specs.md) — checked facts,
    with sources and dates, that agents must not change from memory
 
-## Contributing
-
-Issues and pull requests are welcome. When reporting a wiring or
-firmware problem, include the board variant, the sketch version, and
-the Serial Monitor output.
-
-Agents and contributors: read [AGENTS.md](AGENTS.md) first. It states
-the frozen SuperMini pin assignment, the rules that keep this guide
-general-purpose, and the verification required before a change is
-claimed done. Run the local guardrail checks before pushing:
-
-```
-python3 scripts/check.sh
-```
-
-Checks run locally by default — no hosted CI is enabled, because
-this repository is private and GitHub Actions is metered for private
-repos. See AGENTS.md for the opt-in CI instructions and the $0
-spending-limit requirement. Verified specifications, with sources
-and check dates, live in
-[docs/verified-specs.md](docs/verified-specs.md).
-
 ## Sources
 
 Synthesized from MakerGuides, Instructables, LastMinuteEngineers,
