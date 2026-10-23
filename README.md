@@ -11,8 +11,9 @@ a 0.96-inch SSD1306 OLED. It shows:
 
 Navigation is a rotary encoder (rotate to change pages, press to jump
 to the summary). A separate analog potentiometer controls screen
-brightness. Power is USB-C; no software is required on the host
-computer, which only supplies power.
+brightness. Power is USB-C; no host software is required at runtime —
+the host computer only supplies power. Uploading the sketch still
+needs the Arduino IDE or PlatformIO.
 
 > **Board:** ESP32-C3 SuperMini. All pin numbers in this repository
 > are SuperMini pins (I2C on GPIO 4/5, encoder on 6/7/10, pot on ADC1
@@ -28,7 +29,8 @@ computer, which only supplies power.
 - OLED brightness via potentiometer (contrast control, no backlight)
 - Optional PIR wake/sleep support (compile-time flag)
 - No soldering required — breadboard build
-- No API keys, accounts, or host-side software
+- No API keys or accounts; no host software at runtime (uploading
+  needs the IDE or PlatformIO)
 
 ## The four screens
 
@@ -56,10 +58,12 @@ USB-C data cable (not a charge-only cable).
    encoder, dimming
 5. [Build order](docs/build-order.md) — staged build, with a test after
    each stage
-6. [Troubleshooting](docs/troubleshooting.md) — symptoms, causes, fixes
-7. [Sources & credits](docs/sources.md) — guides this project draws on,
+6. [Hardware tests](docs/hardware-tests.md) — bench checklist with
+   expected values, to run against a finished build
+7. [Troubleshooting](docs/troubleshooting.md) — symptoms, causes, fixes
+8. [Sources & credits](docs/sources.md) — guides this project draws on,
    and image credits
-8. [Verified specifications](docs/verified-specs.md) — checked facts,
+9. [Verified specifications](docs/verified-specs.md) — checked facts,
    with sources and dates, that agents must not change from memory
 
 Then upload the sketch:
@@ -80,6 +84,7 @@ All user-specific settings live in one block at the top of the sketch:
 - `LOCATION_TZ` — the IANA time-zone name for the Open-Meteo request
   (for example `America/Toronto`, `Europe/London`)
 - `LOCATION_NAME` — the short label shown on the outdoor screen
+  (keep it to about 8 characters, or the outdoor header clips)
 - `TIMEZONE_POSIX` — the POSIX time-zone string for local clock time
   (for example `EST5EDT,M3.2.0,M11.1.0` for Eastern Time)
 
@@ -88,7 +93,8 @@ them with the target location before use.
 
 Optional, after the base build works: an HC-SR501 PIR on GPIO 0 can
 blank the display when the room is quiet and wake it on motion. Enable
-it with the `USE_PIR` flag in the sketch.
+it with the `USE_PIR` flag in the sketch. Blank time is 60 s after
+the PIR last reads HIGH, plus the module's own delay-pot setting.
 
 ## Documentation
 
@@ -106,10 +112,12 @@ to a single page:
    encoder, dimming
 5. [Build order](docs/build-order.md) — staged build, with a test after
    each stage
-6. [Troubleshooting](docs/troubleshooting.md) — symptoms, causes, fixes
-7. [Sources & credits](docs/sources.md) — guides this project draws on,
+6. [Hardware tests](docs/hardware-tests.md) — bench checklist with
+   expected values, to run against a finished build
+7. [Troubleshooting](docs/troubleshooting.md) — symptoms, causes, fixes
+8. [Sources & credits](docs/sources.md) — guides this project draws on,
    and image credits
-8. [Verified specifications](docs/verified-specs.md) — checked facts,
+9. [Verified specifications](docs/verified-specs.md) — checked facts,
    with sources and dates, that agents must not change from memory
 
 ## Sources
