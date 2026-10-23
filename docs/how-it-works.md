@@ -6,7 +6,16 @@ The ESP32 has no battery-backed clock, so on boot it asks an internet
 time server (NTP, pool.ntp.org) for the current UTC time, then applies
 the America/Toronto rules — EST/EDT with North American daylight-saving
 switch dates — via the timezone string
-`"EST5EDT,M3.2.0,M11.1.0"`. After that one sync, the ESP32's internal
+`"EST5EDT,M3.2.0,M11.1.0"`.
+
+![Diagram of communication between a client and an NTP server over UDP](https://circuitdigest.com/sites/default/files/inlineimages/u/Communication-between-UDP-and-NTP-server.png)
+
+How NTP works, conceptually: the client asks a time server over UDP
+(port 123) and the server answers with the time of day. Diagram:
+CircuitDigest — note this is a concept diagram, not wiring for this
+build (CircuitDigest's own clock uses SPI, this build uses I2C).
+
+After that one sync, the ESP32's internal
 timer keeps time on its own and the sketch just reads it once a second
 with `getLocalTime()`. Unplug the internet and the clock keeps ticking;
 unplug the power and it re-syncs on the next boot.
@@ -81,6 +90,22 @@ contacts generate the two offset signals as you turn.
 Inside the encoder: the rotating disc and contacts that produce the two
 phase-shifted signals. Diagram: LastMinuteEngineers, ESP32 Rotary
 Encoder Tutorial.
+
+![Animation of a rotary encoder's internal disc rotating and its CLK and DT signals changing](https://lastminuteengineers.com/wp-content/uploads/arduino/rotary-encoder-working-animation.gif)
+
+The same mechanism in motion: as the disc turns, CLK and DT make
+contact in sequence, one always leading the other. Animation:
+LastMinuteEngineers.
+
+![CLK and DT output pulses during clockwise rotation](https://lastminuteengineers.com/wp-content/uploads/arduino/rotary-encoder-output-pulses-in-clockwise-rotation.png)
+
+Clockwise: CLK leads DT. Diagram: LastMinuteEngineers.
+
+![CLK and DT output pulses during counter-clockwise rotation](https://lastminuteengineers.com/wp-content/uploads/arduino/rotary-encoder-output-pulses-in-anticlockwise-rotation.png)
+
+Counter-clockwise: DT leads CLK — the phase relationship is reversed,
+and that reversal is how the code knows which way you turned. Diagram:
+LastMinuteEngineers.
 
 Two ways to read it, both covered by the LastMinuteEngineers tutorial:
 
