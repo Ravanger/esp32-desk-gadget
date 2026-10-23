@@ -34,6 +34,14 @@ goes on. Total wiring is only ~15 jumpers, so this goes fast.
      Counts backwards? Swap CLK and DT — that's a fix, not a failure.
      Double-steps or missed steps? See
      [troubleshooting.md](troubleshooting.md) row 5.
+
+     ![Serial Monitor output showing encoder direction and counter as the knob is turned](https://lastminuteengineers.com/wp-content/uploads/iot/Rotary-Encoder-Output-On-Serial-Monitor.png)
+
+     What a working encoder looks like in the Serial Monitor, from the
+     LastMinuteEngineers tutorial: direction (CW/CCW) and a counter that
+     goes up one way and down the other. If you add a temporary
+     `Serial.print` of your page number, yours should behave the same
+     way. Screenshot: LastMinuteEngineers.
 6. **Add the potentiometer.** Power down, wire the pot (ends to
    3V3/GND, wiper to GPIO 34), power up.
    - **Test:** turning the pot sweeps the OLED from dim to full
