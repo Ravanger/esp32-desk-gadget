@@ -92,3 +92,7 @@ Note: the classic ESP32's bare capacitive-touch trick does **not**
 work here — the ESP32-C3 has no capacitive touch peripheral, unlike
 the classic ESP32. On this board, touch means the TTP223 module, not a
 bare wire or foil pad.
+
+---
+
+[← Previous: Parts](parts.md) · [Contents](../README.md) · [Next: Libraries & setup →](libraries-and-setup.md)

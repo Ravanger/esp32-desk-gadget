@@ -47,3 +47,7 @@ Male-to-male jumper wires. Photo: MakerGuides.
   output.
 - No resistors for the module versions of the OLED and DHT11: their
   pull-ups are on the module boards.
+
+---
+
+[← Previous: Start](../README.md) · [Next: Wiring →](wiring.md)

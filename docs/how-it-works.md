@@ -177,3 +177,7 @@ Two warnings: at very low contrast the display can look patchy rather
 than elegantly dim — that is the panel, not the wiring — and for true
 "off", use the display on/off commands instead, which is exactly what
 the optional PIR sleep does.
+
+---
+
+[← Previous: Libraries & setup](libraries-and-setup.md) · [Contents](../README.md) · [Next: Build order →](build-order.md)
