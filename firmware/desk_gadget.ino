@@ -47,9 +47,9 @@ const char* TIMEZONE_POSIX = "EST5EDT,M3.2.0,M11.1.0";
 // ---------- Weather: Open-Meteo (no key), URL built from config ----------
 String weatherUrl() {
   String url = "https://api.open-meteo.com/v1/forecast?latitude=";
-  url += String(LOCATION_LAT, 2);
+  url += String(LOCATION_LAT, 4);
   url += "&longitude=";
-  url += String(LOCATION_LON, 2);
+  url += String(LOCATION_LON, 4);
   url += "&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m";
   url += "&timezone=";
   url += LOCATION_TZ;  // IANA names contain no characters needing encoding here
@@ -70,6 +70,7 @@ int contrast = 200;  // current OLED contrast 0-255
 unsigned long lastDHT = 0, lastWeather = 0, lastDraw = 0;
 unsigned long lastBtn = 0, bootMs = 0;
 int lastCLK;
+int lastSw = HIGH;  // previous encoder-button state, for edge detection
 
 // ---------- WMO weather code -> text ----------
 const char* codeText(int c) {
@@ -79,15 +80,26 @@ const char* codeText(int c) {
     case 2: return "Partly cloudy";
     case 3: return "Overcast";
     case 45: return "Fog";
-    case 48: return "Icy fog";
-    case 51: case 53: case 55: return "Drizzle";
-    case 56: case 57: return "Freezing drizzle";
-    case 61: case 63: case 65: return "Rain";
-    case 66: case 67: return "Freezing rain";
-    case 71: case 73: case 75: return "Snow";
+    case 48: return "Depositing rime fog";
+    case 51: return "Light drizzle";
+    case 53: return "Moderate drizzle";
+    case 55: return "Dense drizzle";
+    case 56: return "Light freezing drizzle";
+    case 57: return "Dense freezing drizzle";
+    case 61: return "Slight rain";
+    case 63: return "Moderate rain";
+    case 65: return "Heavy rain";
+    case 66: return "Light freezing rain";
+    case 67: return "Heavy freezing rain";
+    case 71: return "Slight snowfall";
+    case 73: return "Moderate snowfall";
+    case 75: return "Heavy snowfall";
     case 77: return "Snow grains";
-    case 80: case 81: case 82: return "Rain showers";
-    case 85: case 86: return "Snow showers";
+    case 80: return "Slight rain showers";
+    case 81: return "Moderate rain showers";
+    case 82: return "Violent rain showers";
+    case 85: return "Slight snow showers";
+    case 86: return "Heavy snow showers";
     case 95: return "Thunderstorm";
     case 96: return "Thunderstorm, slight hail";
     case 97: return "Heavy thunderstorm";
@@ -191,7 +203,11 @@ void drawPage() {
     display.setTextSize(1);
     display.setCursor(0, 15);
     if (haveTime) display.printf("Time %02d:%02d\n", t.tm_hour, t.tm_min);
-    display.printf("In %.1f C  %.0f %%\n", inTemp, inHum);
+    if (isnan(inTemp) || isnan(inHum)) {
+      display.print("In --\n");
+    } else {
+      display.printf("In %.1f C  %.0f %%\n", inTemp, inHum);
+    }
     if (weatherOK) display.printf("Out %.1f C  %s\n", outTemp, codeText(outCode));
     display.printf("Bright %d / 255\n", contrast);
     display.printf("WiFi %s\n", WiFi.status() == WL_CONNECTED ? "connected" : "DOWN");
@@ -224,12 +240,33 @@ void setup() {
 #if USE_PIR
   pinMode(PIR_PIN, INPUT);
 #endif
-  // WiFi, then NTP with the configured time-zone rules
+  // WiFi, then NTP with the configured time-zone rules.
+  // WiFi is NOT waited on forever: after a 30 s timeout the gadget
+  // continues anyway, so a WiFi failure is a clock showing --:--
+  // (NTP not yet synced) plus "WiFi DOWN" on the Summary page, not a
+  // blank screen with no Serial output. NTP (via configTzTime) and
+  // the 10-minute weather fetch keep working in the background, so
+  // both recover on their own when WiFi comes up.
+  display.clearDisplay();
+  display.setTextSize(1);
+  display.setCursor(0, 0);
+  display.print("Connecting WiFi...");
+  display.display();
+  Serial.println("WiFi: connecting...");
   WiFi.mode(WIFI_STA);
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
-  while (WiFi.status() != WL_CONNECTED) delay(250);
+  unsigned long wifiStart = millis();
+  while (WiFi.status() != WL_CONNECTED &&
+         millis() - wifiStart < 30000UL) {
+    delay(250);
+  }
+  if (WiFi.status() == WL_CONNECTED) {
+    Serial.println("WiFi: connected");
+  } else {
+    Serial.println("WiFi: connection failed (30 s timeout) - continuing without WiFi");
+  }
   configTzTime(TIMEZONE_POSIX, "pool.ntp.org", "time.nist.gov");
-  fetchWeather();
+  if (WiFi.status() == WL_CONNECTED) fetchWeather();
   lastWeather = millis();
   drawPage();
 }
@@ -250,12 +287,17 @@ void loop() {
   }
   lastCLK = clk;
 
-  // --- Encoder press (200 ms debounce guard): jump to/from summary ---
-  if (digitalRead(ENC_SW) == LOW && now - lastBtn > 200) {
+  // --- Encoder press (edge-triggered, 200 ms guard): jump to/from summary ---
+  // Act only on the HIGH -> LOW transition, so holding the button
+  // down does NOT re-trigger every 200 ms. A press jumps to Summary;
+  // a second press returns to Clock. It does not step through pages.
+  int sw = digitalRead(ENC_SW);
+  if (sw == LOW && lastSw == HIGH && now - lastBtn > 200) {
     lastBtn = now;
     page = (page == 3) ? 0 : 3;
     drawPage();
   }
+  lastSw = sw;
 
   // --- Pot -> contrast (only touch the register when it changes) ---
   int target = map(analogRead(POT_PIN), 0, 4095, 8, 255);
