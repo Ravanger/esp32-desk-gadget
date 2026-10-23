@@ -40,7 +40,8 @@ conflicts with a general instruction, this file wins for this repo.
   readings are unreliable while WiFi is running. Digital use of
   GPIO 5 as I2C SCL is fine; analog use is not.
 - I2C on the C3 runs through the GPIO matrix — there are no fixed
-  I2C pins. The sketch must call `Wire.begin(4, 5)` explicitly.
+  I2C pins. The sketch must call `Wire.begin(OLED_SDA, OLED_SCL)`
+  explicitly, where those defines are 4 and 5.
 - The ESP32-C3 has no capacitive-touch peripheral. Touch means the
   TTP223 module, never a bare wire or foil pad.
 - The C3 has no 5 GHz radio. All WiFi instructions must say 2.4 GHz.
@@ -76,10 +77,11 @@ conflicts with a general instruction, this file wins for this repo.
 
 - Run `python3 scripts/check.sh` before pushing, and include its
   output in the change summary. A change that fails the checks is
-  not done.
-- If the check script cannot run a compile check (no Arduino CLI /
-  PlatformIO available), say so explicitly; do not claim the sketch
-  compiles.
+  not done. The script includes a wiring-consistency check
+  (docs/wiring.md vs the sketch defines) and a PlatformIO compile
+  check; if PlatformIO is absent, the compile check prints SKIP
+  rather than failing — say so explicitly and do not claim the
+  sketch compiles.
 - Verify live before claiming a push, merge, or publication: fetch
   the file from GitHub and confirm the expected content is there.
   A successful API response for one file is not proof the whole
@@ -91,7 +93,8 @@ conflicts with a general instruction, this file wins for this repo.
 ## Workflow and cost
 
 - Work on a branch, never push directly to `main`. Open a pull
-  request; merges go through the GitHub web UI.
+  request; merge via the pull request (web UI or API — API merges
+  were proven to work with the current token on 2026-10-23).
 - Checks run locally by default (`scripts/check.sh`). There is no
   hosted CI enabled by default, because this repository is private
   and GitHub Actions is metered for private repos (included
