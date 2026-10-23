@@ -86,15 +86,6 @@ All user-specific settings live in one block at the top of the sketch:
 The values shipped in the sketch are an example configuration; replace
 them with the target location before use.
 
-## What this build deliberately does not need
-
-- No host-side program: the board talks to the internet itself over
-  WiFi; USB only supplies power.
-- No weather API key: Open-Meteo is keyless. At one fetch every
-  10 minutes, this project makes 144 requests per day, well within
-  Open-Meteo's non-commercial allowance.
-- No batteries and no soldering.
-
 Optional, after the base build works: an HC-SR501 PIR on GPIO 0 can
 blank the display when the room is quiet and wake it on motion. Enable
 it with the `USE_PIR` flag in the sketch.
