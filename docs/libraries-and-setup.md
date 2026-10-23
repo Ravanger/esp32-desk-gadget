@@ -7,8 +7,11 @@ Arduino-framework ESP32 either way.
 ## Arduino IDE
 
 1. Install the ESP32 board package (Boards Manager → "esp32 by
-   Espressif"), and select your dev board.
-2. Install these from the Library Manager:
+   Espressif"), and select **"ESP32C3 Dev Module"** for the SuperMini.
+2. **Enable Tools → USB CDC On Boot.** The SuperMini's USB-C is native
+   USB, not a separate serial chip — without this setting, Serial
+   Monitor output won't show.
+3. Install these from the Library Manager:
 
 | Library | Install name | Used for |
 | ------- | ------------ | -------- |
@@ -20,7 +23,7 @@ Arduino-framework ESP32 either way.
 
 ## PlatformIO
 
-The same set in `lib_deps`:
+Board: `esp32-c3-devkitm-1`. The same libraries in `lib_deps`:
 
 ```
 adafruit/Adafruit GFX Library
