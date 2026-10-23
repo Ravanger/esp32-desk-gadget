@@ -84,9 +84,29 @@ LastMinuteEngineers.
 
 ## Swapping the encoder for something else
 
-A tactile button between GPIO 10 and GND (with INPUT_PULLUP) steps to
-the next page per press. A TTP223 touch module wires VCC→3V3, GND→GND,
-OUT→GPIO 10 and behaves like that button.
+A tactile button between GPIO 10 and GND (with INPUT_PULLUP) is an
+alternative to the encoder's push button — but a press jumps to
+Summary, and a second press returns to Clock; it does not step
+through pages. Do NOT wire a button on GPIO 10 at the same time as
+the encoder's SW pin.
+
+A TTP223 touch module wires VCC→3V3, GND→GND, OUT→GPIO 10 — with a
+correction to an earlier version of this page, which said it
+"behaves like that button". A default TTP223 (both jumpers
+unsoldered) is momentary active-HIGH (OUT HIGH on touch), exactly
+backwards for the sketch's active-LOW button logic, and there is no
+TTP223 code path in the sketch. Solder jumper A for active-low
+output, or invert the logic for that input — not both. Power it
+from 3V3 only (its output is VCC-driven, so 5 V power would drive
+OUT to about 4 V), and do not wire it at the same time as the
+encoder's SW pin: a button press would short TTP223 OUT to GND.
+
+Two more module traps, before you power anything: bare SSD1306
+panels and bare DHT11 sensors have no pull-up resistors — the wiring
+table as written assumes module versions, which include them. And
+always read the OLED module's silkscreen before powering it: some
+modules swap the VCC and GND pin order, and the bare SSD1306 chip is
+not 5 V-tolerant.
 
 Note: the classic ESP32's bare capacitive-touch trick does **not**
 work here — the ESP32-C3 has no capacitive touch peripheral, unlike

@@ -17,6 +17,9 @@ Checks:
   5. No real WiFi credentials (placeholders only).
   6. No personal/kit/cost phrases in docs.
   7. All internal markdown links resolve.
+  8. Wiring table in docs/wiring.md matches the sketch pin defines.
+  9. Sketch compiles for esp32-c3-devkitm-1 with PlatformIO
+     (skipped, not failed, when PlatformIO is not installed).
 """
 
 import re
@@ -122,6 +125,114 @@ for md in sorted(ROOT.rglob("*.md")):
         target = (md.parent / link.split("#")[0]).resolve()
         check(f"link {link} from {md.relative_to(ROOT)}",
               target.exists(), "missing file")
+
+# --- 8. Wiring table vs sketch ------------------------------------------
+# Parse the wiring table in docs/wiring.md and compare every signal
+# and power connection against the sketch defines and the frozen rules.
+import shutil
+import subprocess
+import tempfile
+
+wiring = read("docs/wiring.md")
+rows = []
+current_module = ""
+in_table = False
+for line in wiring.splitlines():
+    if line.startswith("| Module |"):
+        in_table = True
+        continue
+    if in_table:
+        if line.startswith("## "):
+            break
+        if not line.startswith("|"):
+            continue
+        cells = [c.strip() for c in line.strip().strip("|").split("|")]
+        # Empty first cell = continuation row for the previous module;
+        # a cell of only dashes = the separator row, which is skipped.
+        if len(cells) < 3 or (cells[0] and set(cells[0]) <= {"-", " "}):
+            continue
+        if cells[0]:
+            current_module = cells[0]
+        rows.append((current_module, cells[1], cells[2]))
+
+SIGNAL_PINS = {
+    ("OLED (SSD1306)", "SDA"): "4",
+    ("OLED (SSD1306)", "SCL"): "5",
+    ("DHT11", "DATA (OUT)"): "3",
+    ("Rotary encoder", "CLK"): "6",
+    ("Rotary encoder", "DT"): "7",
+    ("Rotary encoder", "SW"): "10",
+    ("Potentiometer (10K)", "Wiper (middle)"): "1",
+    ("PIR (optional)", "OUT"): "0",
+}
+found_signals = {}
+for module, pin, target in rows:
+    gpio = re.search(r"GPIO (\d+)", target)
+    if gpio:
+        found_signals[(module, pin)] = gpio.group(1)
+        check(f"wiring {module} {pin} not a strapping/classic pin",
+              gpio.group(1) not in {"2", "8", "9", "21", "22", "25",
+                                    "26", "27", "34"},
+              f"assigned GPIO {gpio.group(1)}")
+for key, want in SIGNAL_PINS.items():
+    check(f"wiring {key[0]} {key[1]} == GPIO {want}",
+          found_signals.get(key) == want,
+          f"found {found_signals.get(key)}")
+
+POWER = {
+    ("OLED (SSD1306)", "VCC"): "3V3",
+    ("DHT11", "VCC"): "3V3",
+    ("Rotary encoder", "+ / VCC"): "3V3",
+    ("Potentiometer (10K)", "End 1"): "3V3",
+    ("Potentiometer (10K)", "End 2"): "GND",
+    ("PIR (optional)", "VCC"): "5V",
+}
+for (module, pin), want in POWER.items():
+    hit = [t for (m, p, t) in rows if m == module and p == pin]
+    check(f"wiring {module} {pin} -> {want}",
+          hit and want in hit[0], f"found {hit}")
+
+# --- 9. Compile check (PlatformIO, skipped if absent) ---------------------
+pio = shutil.which("pio")
+if not pio:
+    for cand in [Path.home() / ".local/bin/pio",
+                 Path.home() / "workspace/.pio-venv/bin/pio"]:
+        if cand.exists():
+            pio = str(cand)
+            break
+if pio:
+    with tempfile.TemporaryDirectory() as td:
+        td = Path(td)
+        (td / "platformio.ini").write_text(
+            "[env:esp32-c3-devkitm-1]\n"
+            "platform = espressif32\n"
+            "board = esp32-c3-devkitm-1\n"
+            "framework = arduino\n"
+            "lib_deps =\n"
+            "    adafruit/Adafruit GFX Library\n"
+            "    adafruit/Adafruit SSD1306\n"
+            "    adafruit/DHT sensor library\n"
+            "    bblanchon/ArduinoJson\n"
+            "build_flags =\n"
+            "    -DUSB_CDC_ON_BOOT=1\n")
+        src = td / "src"
+        src.mkdir()
+        (src / "main.cpp").write_text(
+            "#include <Arduino.h>\n" + read("firmware/desk_gadget.ino"))
+        env = dict(__import__("os").environ)
+        core_dir = Path.home() / "workspace/.platformio"
+        if core_dir.exists():
+            env["PLATFORMIO_CORE_DIR"] = str(core_dir)
+        proc = subprocess.run([pio, "run", "-e", "esp32-c3-devkitm-1"],
+                              cwd=td, capture_output=True, text=True,
+                              env=env, timeout=900)
+        check("sketch compiles for esp32-c3-devkitm-1 (PlatformIO)",
+              proc.returncode == 0 and
+              (td / ".pio/build/esp32-c3-devkitm-1/firmware.bin").exists(),
+              (proc.stdout + proc.stderr)[-500:] if proc.returncode else "")
+else:
+    print("[skip] compile check — PlatformIO (pio) not found; "
+          "install it and re-run to include the compile check")
 
 print()
 if FAILURES:
