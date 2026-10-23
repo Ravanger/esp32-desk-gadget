@@ -66,3 +66,7 @@ goes on. Total wiring is only ~15 jumpers, so this goes fast.
      blanks about 60 s after the last motion. Note the HC-SR501 itself
      needs a minute to settle after power-up and will trigger
      spuriously until then.
+
+---
+
+[← Previous: How it works](how-it-works.md) · [Contents](../README.md) · [Next: Troubleshooting →](troubleshooting.md)
