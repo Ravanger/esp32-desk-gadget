@@ -23,6 +23,22 @@ image — none are photos of this build.
   signals, polling vs interrupt decode table, pull-ups and button
   debounce.
   <https://lastminuteengineers.com/esp32-rotary-encoder-tutorial/>
+- **ESP32-C3 SuperMini pinout sources (for the C3 revision of this
+  guide).** The SuperMini breaks out GPIOs 0–10, 20, 21; I2C runs
+  through the GPIO matrix (not fixed pins); strapping pins are GPIO 2,
+  8, 9; GPIO 8 also drives the onboard LED and GPIO 9 is the BOOT
+  button, so neither is used for I2C here — I2C is on GPIO 4/5 instead.
+  - ESPboards — ESP32 C3 Super Mini pinout:
+    <https://www.espboards.dev/esp32/esp32-c3-super-mini/>
+  - LastMinuteEngineers — ESP32-C3 Super Mini Pinout Reference
+    (including the warning against GPIO 8/9 for I2C):
+    <https://lastminuteengineers.com/esp32-c3-super-mini-pinout-reference/>
+  - Mischianti — ESP32-C3 SuperMini Plus pinout (recommends
+    `Wire.begin(4, 5)`, USB CDC On Boot for Serial):
+    <https://mischianti.org/esp32-c3-supermini-plus-v2-high-resolution-pinout-datasheet-and-specs/>
+  - Espressif ESP-IDF — GPIO & RTC GPIO, ESP32-C3 (ADC1 on GPIO 0–4,
+    ADC2 on GPIO 5, strapping pins 2/8/9):
+    <https://docs.espressif.com/projects/esp-idf/en/v5.4/esp32c3/api-reference/peripherals/gpio.html>
 
 Built from parts in the ESP32 starter kit + 45-in-1 sensor kit. Photos
 and diagrams © their respective guides, linked above. Weather data:
