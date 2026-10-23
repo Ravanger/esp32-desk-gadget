@@ -15,6 +15,22 @@ ESP32 starter kit, the encoder is #15 in the 45-in-1 sensor kit.
 | 1 | Micro USB cable | Starter kit | Must be a data cable, not charge-only — it carries power and the firmware upload. |
 | 1 | HC-SR501 PIR motion sensor (optional) | Starter kit | Only for the wake/sleep extra. Skip it on the first build. |
 
+![ESP32 development board, similar to the one in this build](https://www.makerguides.com/wp-content/uploads/2023/10/Lolin32_lite.jpg)
+
+An ESP32 board of the same family as the one in the MakerGuides
+weather station — yours may look slightly different, the pins that
+matter are 3V3, GND, and your board's SDA/SCL. Photo: MakerGuides.
+
+![830-tie-point breadboard](https://www.makerguides.com/wp-content/uploads/2019/05/Half_breadboard56a.png)
+
+The breadboard this build goes on — everything in this guide is
+breadboarded, nothing soldered. Photo: MakerGuides.
+
+![Set of male-to-male jumper wires](https://www.makerguides.com/wp-content/uploads/2023/09/dupon_wire_set.png)
+
+Jumper wires for the ~15 connections in [wiring.md](wiring.md).
+Photo: MakerGuides.
+
 ![SSD1306 0.96-inch OLED module showing its four pins: GND, VCC, SCL, SDA](../assets/oled-display.jpg)
 
 The display: a 0.96″ SSD1306 OLED, 128×64, I2C. Note the pin order
