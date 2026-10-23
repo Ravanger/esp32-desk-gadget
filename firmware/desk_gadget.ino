@@ -88,7 +88,10 @@ const char* codeText(int c) {
     case 77: return "Snow grains";
     case 80: case 81: case 82: return "Rain showers";
     case 85: case 86: return "Snow showers";
-    case 95: case 96: case 99: return "Thunderstorm";
+    case 95: return "Thunderstorm";
+    case 96: return "Thunderstorm, slight hail";
+    case 97: return "Heavy thunderstorm";
+    case 99: return "Thunderstorm, heavy hail";
     default: return "-";
   }
 }
