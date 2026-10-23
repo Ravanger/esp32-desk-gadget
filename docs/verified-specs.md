@@ -54,3 +54,7 @@ Checked: 2026-10-23.
 - Espressif ESP-IDF GPIO (ESP32-C3): https://docs.espressif.com/projects/esp-idf/en/v5.4/esp32c3/api-reference/peripherals/gpio.html
 - Open-Meteo docs: https://open-meteo.com/en/docs
 - Adafruit SSD1306: https://learn.adafruit.com/1-5-and-2-4-monochrome-128x64-oled-display-module?view=all
+
+---
+
+[← Previous: Sources & credits](sources.md) · [Contents](../README.md)
