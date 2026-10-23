@@ -59,6 +59,13 @@ uses different GPIOs than this guide; keep the pattern (CLK, DT, SW each
 to a GPIO, module powered from the board) and use this guide's pins:
 CLK 25, DT 26, SW 27. Diagram: LastMinuteEngineers.
 
+![Rotary encoder module pinout: GND, +, SW, DT, CLK](https://lastminuteengineers.com/wp-content/uploads/arduino/rotary-encoder-module-pinout.png)
+
+The encoder module's pins, labelled: GND, + (power), SW (push-button),
+DT and CLK (the two quadrature signals). If your module's pin order
+differs, go by the labels, not the positions. Diagram:
+LastMinuteEngineers.
+
 ## Swapping the encoder for something else
 
 A tactile button between GPIO 27 and GND (with INPUT_PULLUP) steps to
