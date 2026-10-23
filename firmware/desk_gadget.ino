@@ -1,10 +1,10 @@
 // ============================================================
-// ESP32 Desk Gadget — clock + indoor DHT11 + Toronto weather
+// ESP32 Desk Gadget — clock + indoor DHT11 + outdoor weather
 // Board: ESP32-C3 SuperMini (select "ESP32C3 Dev Module" in the IDE,
 // and enable Tools > USB CDC On Boot so Serial output shows over
 // the SuperMini's native USB-C connection).
 // OLED SSD1306 128x64 I2C (0x3C) | encoder pages | pot dimming
-// Weather: Open-Meteo (no API key). Time: NTP, America/Toronto.
+// Weather: Open-Meteo (no API key). Time: NTP, configurable zone.
 // See README.md and docs/ in this repo for wiring and build order.
 // Pins are SuperMini-specific: I2C on GPIO 4/5 (NOT the risky
 // strapping pins GPIO 8/9), encoder on 6/7/10, pot on ADC1 GPIO 1.
@@ -18,9 +18,20 @@
 #include <DHT.h>
 #include "time.h"
 
-// ---------- The only two lines you MUST edit ----------
+// ---------- Configuration: edit these before uploading ----------
+// WiFi: must be a 2.4 GHz network (the ESP32-C3 has no 5 GHz radio).
 const char* WIFI_SSID = "YOUR_WIFI_NAME";
 const char* WIFI_PASSWORD = "YOUR_WIFI_PASSWORD";
+// Location: decimal degrees, IANA time-zone name, and the short label
+// shown on the outdoor screen. The values below are an example
+// (Toronto, Canada) — replace them with the target location.
+const float LOCATION_LAT = 43.65;
+const float LOCATION_LON = -79.36;
+const char* LOCATION_TZ = "America/Toronto";
+const char* LOCATION_NAME = "TORONTO";
+// Local clock time: POSIX time-zone string for the location above
+// (Eastern Time example). See docs/libraries-and-setup.md.
+const char* TIMEZONE_POSIX = "EST5EDT,M3.2.0,M11.1.0";
 
 // ---------- Pins, ESP32-C3 SuperMini (see docs/wiring.md) ----------
 #define OLED_SDA 4   // I2C via GPIO matrix; NOT GPIO 8 (strapping + onboard LED)
@@ -33,11 +44,17 @@ const char* WIFI_PASSWORD = "YOUR_WIFI_PASSWORD";
 #define PIR_PIN 0    // optional, only if USE_PIR is 1; GPIO 0-5 are RTC GPIOs
 #define USE_PIR 0    // set to 1 after wiring the PIR
 
-// ---------- Weather: Toronto via Open-Meteo (no key) ----------
-const char* WEATHER_URL =
-    "https://api.open-meteo.com/v1/forecast?latitude=43.65&longitude=-79.36"
-    "&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m"
-    "&timezone=America%2FToronto";
+// ---------- Weather: Open-Meteo (no key), URL built from config ----------
+String weatherUrl() {
+  String url = "https://api.open-meteo.com/v1/forecast?latitude=";
+  url += String(LOCATION_LAT, 2);
+  url += "&longitude=";
+  url += String(LOCATION_LON, 2);
+  url += "&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m";
+  url += "&timezone=";
+  url += LOCATION_TZ;  // IANA names contain no characters needing encoding here
+  return url;
+}
 
 // ---------- Objects ----------
 Adafruit_SSD1306 display(128, 64, &Wire, -1);
@@ -64,9 +81,13 @@ const char* codeText(int c) {
     case 45: return "Fog";
     case 48: return "Icy fog";
     case 51: case 53: case 55: return "Drizzle";
+    case 56: case 57: return "Freezing drizzle";
     case 61: case 63: case 65: return "Rain";
+    case 66: case 67: return "Freezing rain";
     case 71: case 73: case 75: return "Snow";
-    case 80: case 81: case 82: return "Showers";
+    case 77: return "Snow grains";
+    case 80: case 81: case 82: return "Rain showers";
+    case 85: case 86: return "Snow showers";
     case 95: case 96: case 99: return "Thunderstorm";
     default: return "-";
   }
@@ -82,7 +103,7 @@ void setContrast(int v) {
 void fetchWeather() {
   if (WiFi.status() != WL_CONNECTED) return;
   HTTPClient http;
-  http.begin(WEATHER_URL);
+  http.begin(weatherUrl());
   int code = http.GET();
   if (code == 200) {
     JsonDocument doc;  // ArduinoJson v7
@@ -116,7 +137,7 @@ void drawPage() {
   display.clearDisplay();
   if (page == 0) {
     // ---- CLOCK ----
-    header("CLOCK - TORONTO");
+    header("CLOCK");
     display.setTextSize(3);
     display.setCursor(16, 20);
     if (haveTime) {
@@ -147,7 +168,11 @@ void drawPage() {
     if (!isnan(inHum)) display.printf("%.0f %% RH", inHum);
   } else if (page == 2) {
     // ---- OUTDOOR ----
-    header("TORONTO - OPEN-METEO");
+    {
+      char buf[32];
+      snprintf(buf, sizeof(buf), "%s - OPEN-METEO", LOCATION_NAME);
+      header(buf);
+    }
     display.setTextSize(1);
     display.setCursor(0, 16);
     if (!weatherOK) {
@@ -196,11 +221,11 @@ void setup() {
 #if USE_PIR
   pinMode(PIR_PIN, INPUT);
 #endif
-  // WiFi, then NTP with Toronto daylight-saving rules
+  // WiFi, then NTP with the configured time-zone rules
   WiFi.mode(WIFI_STA);
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
   while (WiFi.status() != WL_CONNECTED) delay(250);
-  configTzTime("EST5EDT,M3.2.0,M11.1.0", "pool.ntp.org", "time.nist.gov");
+  configTzTime(TIMEZONE_POSIX, "pool.ntp.org", "time.nist.gov");
   fetchWeather();
   lastWeather = millis();
   drawPage();
