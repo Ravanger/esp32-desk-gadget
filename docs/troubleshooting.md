@@ -15,3 +15,7 @@
 | Encoder double-steps or skips | Contact bounce, or the loop is busy when you turn | Keep the press debounce at 200 ms; for rotation, act only on one edge of CLK (the sketch uses the falling edge). If it still misbehaves at speed, move to the interrupt + 16-entry quadrature decode table method from the LastMinuteEngineers tutorial. |
 | Screen too dim / patchy at low settings | Contrast floor too low — a panel trait, not a fault | The sketch already floors the pot at 8; raise that floor (e.g. map to 30–255) if your panel looks blotchy when dim. For "off", use `SSD1306_DISPLAYOFF` rather than contrast 0. |
 | Nothing uploads | Charge-only USB cable, wrong port/board selected, or the board isn't entering download mode | Swap in a known data cable, pick the right port and "ESP32C3 Dev Module" in the IDE, and hold the BOOT button (GPIO 9) while starting the upload if the board needs it. |
+
+---
+
+[← Previous: Build order](build-order.md) · [Contents](../README.md) · [Next: Sources & credits →](sources.md)
