@@ -135,31 +135,34 @@ All checked 2026-10-24. Figures taken from them are listed in
 
 ## Images
 
-### Self-hosted (in `assets/`)
+All images are stored in `assets/` and credited here; none are
+hotlinked. Images without a stated licence are used with credit for
+this private, non-commercial guide; reuse permission was not
+separately obtained, and a credit here is not a licence. Before making
+the guide public or commercial, re-clear every unlicensed image and
+replace `supermini-pinout.jpg` (CC BY-NC-ND 4.0 bars commercial use).
 
-| Image | Source guide |
-| ----- | ------------ |
-| `oled-display.jpg` | MakerGuides — 0.96-inch SSD1306 OLED photo |
-| `esp32-oled-wiring.png` | MakerGuides — ESP32 → OLED wiring (shown for the four-wire pattern only; pin numbers differ on the SuperMini) |
-| `encoder-wiring.png` | LastMinuteEngineers — rotary encoder wiring |
-| `encoder-internal.png` | LastMinuteEngineers — encoder internal structure |
-
-### Linked from source guides (not hosted here)
-
-These images are hotlinked from the source sites; reuse permission is
-not verified.
-
-| Image | Used in | Source guide |
-| ----- | ------- | ------------ |
-| ESP32 board photo | `parts.md` | MakerGuides |
-| Breadboard photo | `parts.md` | MakerGuides |
-| Jumper wire set photo | `parts.md` | MakerGuides |
-| Encoder module pinout | `wiring.md` | LastMinuteEngineers |
-| NTP/UDP communication diagram | `how-it-works.md` | CircuitDigest (concept diagram, not wiring) |
-| Encoder working animation | `how-it-works.md` | LastMinuteEngineers |
-| Clockwise pulse diagram | `how-it-works.md` | LastMinuteEngineers |
-| Counter-clockwise pulse diagram | `how-it-works.md` | LastMinuteEngineers |
-| Serial Monitor encoder output | `build-order.md` | LastMinuteEngineers |
+| Image | Used in | Credit and source |
+| ----- | ------- | ----------------- |
+| `supermini-pinout.jpg` | `parts.md`, `wiring.md` | Renzo Mischianti, CC BY-NC-ND 4.0 — <https://mischianti.org/esp32-c3-super-mini-high-resolution-pinout-datasheet-and-specs/> |
+| `oled-display.jpg` | `parts.md` | MakerGuides — <https://www.makerguides.com/simple-esp32-internet-weather-station/> |
+| `esp32-oled-wiring.png` | `wiring.md` | MakerGuides (four-wire pattern only; pin numbers differ on the SuperMini) — <https://www.makerguides.com/simple-esp32-internet-weather-station/> |
+| `breadboard.png` | `parts.md` | MakerGuides — <https://www.makerguides.com/wp-content/uploads/2019/05/Half_breadboard56a.png> |
+| `jumper-wires.png` | `parts.md` | MakerGuides — <https://www.makerguides.com/wp-content/uploads/2023/09/dupon_wire_set.png> |
+| `dht11-pinout.jpg` | `parts.md` | Components101 — <https://components101.com/sensors/dht11-temperature-sensor> |
+| `push-button-pinout.gif` | `parts.md`, `wiring.md` | Components101 — <https://components101.com/switches/push-button> |
+| `pir-pinout.png` | `parts.md`, `how-it-works.md` | Components101 — <https://components101.com/sensors/hc-sr501-pir-sensor> |
+| `potentiometer.jpg` | `parts.md` | Richard Wheeler (Zephyris), Wikimedia Commons, CC BY-SA 3.0 / GFDL 1.2+ — <https://commons.wikimedia.org/wiki/File:Rotary_Potentiometer.jpg> |
+| `voltage-divider.png` | `how-it-works.md` | Wikimedia Commons, public domain (rendered from SVG) — <https://commons.wikimedia.org/wiki/File:Voltage_divider.svg> |
+| `switch-bounce.png` | `how-it-works.md` | Pololu — <https://www.pololu.com/docs/0J16/4> |
+| `ntp-udp.png` | `how-it-works.md` | CircuitDigest (concept diagram, not wiring) — <https://circuitdigest.com/microcontroller-projects/esp32-internet-clock> |
+| `encoder-wiring.png` | `wiring.md` | LastMinuteEngineers — <https://lastminuteengineers.com/esp32-rotary-encoder-tutorial/> |
+| `encoder-pinout.png` | `wiring.md` | LastMinuteEngineers — <https://lastminuteengineers.com/rotary-encoder-arduino-tutorial/> |
+| `encoder-internal.png` | `how-it-works.md` | LastMinuteEngineers — <https://lastminuteengineers.com/rotary-encoder-arduino-tutorial/> |
+| `encoder-animation.gif` | `how-it-works.md` | LastMinuteEngineers — <https://lastminuteengineers.com/rotary-encoder-arduino-tutorial/> |
+| `encoder-pulses-cw.png` | `how-it-works.md` | LastMinuteEngineers — <https://lastminuteengineers.com/rotary-encoder-arduino-tutorial/> |
+| `encoder-pulses-ccw.png` | `how-it-works.md` | LastMinuteEngineers — <https://lastminuteengineers.com/rotary-encoder-arduino-tutorial/> |
+| `encoder-serial-monitor.png` | `build-order.md` | LastMinuteEngineers — <https://lastminuteengineers.com/esp32-rotary-encoder-tutorial/> |
 
 ### Deliberately excluded
 

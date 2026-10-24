@@ -12,8 +12,8 @@ Arduino-framework ESP32 either way.
    configuration compile-verified under PlatformIO (arduino-esp32
    2.0.17, board esp32-c3-devkitm-1). The board
    **"Nologo ESP32C3 Super Mini"** exists in arduino-esp32 3.x, where
-   USB CDC On Boot is enabled by default; it is not yet
-   compile-verified with this sketch.
+   USB CDC On Boot is enabled by default. The sketch compiles on core
+   3.3.12; that board entry itself was not selected in the test build.
 2. The SuperMini's USB-C is native USB, not a separate serial chip —
    without USB CDC On Boot, Serial Monitor output will not show.
 3. Install these from the Library Manager:
@@ -25,8 +25,20 @@ Arduino-framework ESP32 either way.
 | DHT sensor library (Adafruit) | DHT11 readings (also requires Adafruit Unified Sensor, installed automatically as a dependency) |
 | ArduinoJson (v7 or newer) | Parsing the Open-Meteo JSON response |
 
-Compile-verified on arduino-esp32 2.0.17 (PlatformIO) only, 2026-10-24;
-core 3.x not yet compile-verified (latest stable 3.3.12 as checked 2026-10-24).
+Compile-verified 2026-10-24 on arduino-esp32 2.0.17 (PlatformIO
+espressif32 6.9.0), the recommended core and the one `scripts/check.py`
+builds. Core 3.3.12 was also compiled once, by hand on one machine,
+through the community pioarduino platform (espressif32 6.9.0 ships
+core 2.0.17, so it cannot build 3.x). It needs PlatformIO Core 6.2 or
+newer, and the version string cannot go in `platform =` directly; use the
+release zip:
+
+```ini
+platform = https://github.com/pioarduino/platform-espressif32/releases/download/55.03.312-1/platform-espressif32.zip
+```
+
+Core 3.x builds fill about 91% of the default app partition, against
+about 72% on 2.0.17, so prefer 2.0.17 unless you need 3.x.
 Versions used: ArduinoJson 7.4.3, Adafruit SSD1306 2.5.17, Adafruit GFX
 1.13.0, DHT sensor library 1.4.7, Adafruit Unified Sensor 1.1.15.
 

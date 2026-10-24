@@ -41,7 +41,7 @@ wiring is only ~15 jumpers, so this goes fast.
      "Encoder double-steps or skips" row in
      [troubleshooting.md](troubleshooting.md).
 
-     ![Serial Monitor output showing encoder direction and counter as the knob is turned](https://lastminuteengineers.com/wp-content/uploads/iot/Rotary-Encoder-Output-On-Serial-Monitor.png)
+     ![Serial Monitor output showing encoder direction and counter as the knob is turned](../assets/encoder-serial-monitor.png)
 
      Encoder build (`USE_ENCODER` 1): what a working encoder looks like in the Serial Monitor, from the
      LastMinuteEngineers tutorial: direction (CW/CCW) and a counter that

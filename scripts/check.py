@@ -17,7 +17,7 @@ Checks:
   4. Config constant names match across sketch, README, and docs.
   5. No real WiFi credentials (placeholders only).
   6. No personal/kit/cost phrases in docs.
-  7. All internal markdown links resolve.
+  7. All internal markdown links resolve; no hotlinked images.
   8. Wiring table in docs/wiring.md matches the sketch pin defines.
   9. Sketch avoids strapping/classic pins, uses an ADC1 pot pin, makes
      no blocking getLocalTime(&t), and has no long delay() in loop().
@@ -138,6 +138,9 @@ for md in sorted(ROOT.rglob("*.md")):
         target = (md.parent / link.split("#")[0]).resolve()
         check(f"link {link} from {md.relative_to(ROOT)}",
               target.exists(), "missing file")
+    remote_imgs = re.findall(r"!\[[^\]]*\]\((https?://[^)]+)\)", text)
+    check(f"no hotlinked images in {md.relative_to(ROOT)} (use assets/)",
+          not remote_imgs, f"{remote_imgs}")
 
 # --- 8. Wiring table vs sketch ------------------------------------------
 # Parse the wiring table in docs/wiring.md and compare every signal
