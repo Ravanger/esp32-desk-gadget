@@ -65,11 +65,17 @@ conflicts with a general instruction, this file wins for this repo.
   back to WMO codes.
 - Never commit `esphome/secrets.yaml` or ESPHome build output. Both
   are gitignored. The example file is `esphome/secrets.example.yaml`.
-- `scripts/check.py` validates the ESPHome YAML (pins, secrets
-  example, gitignore) and runs `esphome config` on it when the
-  `esphome` tool and a filled-in `secrets.yaml` are present;
-  otherwise that step prints SKIP. An ESPHome change that fails the
-  static checks is not done, same as a sketch change.
+- `scripts/check.py` validates the ESPHome YAML (each frozen pin in
+  its role, no other GPIO, secrets example, gitignore) and, on a full
+  run with the `esphome` tool installed, runs `esphome config` on a
+  copy with throwaway secrets; otherwise that step prints SKIP. An
+  ESPHome change that fails the static checks is not done, same as a
+  sketch change. `esphome config` does not compile: record compile
+  results in docs/verified-specs.md, as for the sketch.
+- ESPHome behaviour claims (what a component publishes on failure,
+  defaults such as WiFi `reboot_timeout`, version floors) must be
+  checked against the ESPHome source for the recorded version, not
+  assumed from the sketch.
 
 ## Facts, not memory
 

@@ -52,8 +52,15 @@ esphome:
   friendly_name: ${friendly_name}
   # Stable entity names in Home Assistant (no MAC suffix appended).
   name_add_mac_suffix: false
-  # set_contrast() used for pot dimming needs ESPHome 2024.4.0 or newer.
-  min_version: 2024.4.0
+  # The list form of `ota:` (platform: esphome) needs 2024.6.0.
+  min_version: 2024.6.0
+  # Like the sketch's setup(): with a PIR, the display blanks 60 s
+  # after boot unless motion or a press arrives first.
+  on_boot:
+    - lambda: |-
+        if (${use_pir}) {
+          id(pir_blank).execute();
+        }
 
 esp32:
   board: esp32-c3-devkitm-1
@@ -72,9 +79,10 @@ wifi:
   ssid: !secret wifi_ssid
   password: !secret wifi_password
   output_power: ${wifi_tx_power}
-  # No access-point fallback, on purpose: if WiFi is down, the gadget
-  # keeps displaying (clock shows --:--, outdoor waits), the same way
-  # the sketch continues after its 30 s WiFi timeout.
+  # 0s disables ESPHome's default reboot after 15 min without WiFi, and
+  # there is no access-point fallback: with WiFi down the gadget keeps
+  # displaying, the way the sketch continues after its 30 s timeout.
+  reboot_timeout: 0s
 
 api:
   encryption:
@@ -103,8 +111,9 @@ i2c:
 
 # Roboto Mono, the closest match to the sketch's fixed-width text.
 # Sizes mirror the sketch: 8 px (size 1), 16 px (size 2), 24 px (size 3).
-# Pixel positions therefore differ slightly from the sketch; the
-# content and layout of every page are the same.
+# Text is drawn on its baseline at the sketch's y + 7 px per size step,
+# where Adafruit GFX puts its baseline. Top-left anchoring would push
+# Roboto Mono's taller ascender about 3 px lower and into the page dots.
 font:
   - file: "gfonts://Roboto Mono"
     id: font_small
@@ -127,52 +136,54 @@ display:
     # The sketch redraws once a second for the clock's seconds.
     update_interval: 1s
     lambda: |-
+      const auto BL = TextAlign::BASELINE_LEFT;
       auto t = id(sntp_time).now();
       bool have_time = t.is_valid();
       int page = id(page_number);
       auto draw_header = [&](const char *title) {
-        it.print(0, 0, id(font_small), title);
+        it.print(0, 7, id(font_small), BL, title);
         it.line(0, 11, 127, 11, COLOR_ON);
       };
       if (page == 0) {
         // ---- CLOCK ----
         draw_header("CLOCK");
         if (have_time) {
-          it.strftime(10, 20, id(font_large), "%H:%M", t);
-          it.strftime(100, 34, id(font_small), ":%S", t);
-          it.strftime(0, 52, id(font_small), "%a %d %b %Y", t);
+          it.strftime(10, 41, id(font_large), BL, "%H:%M", t);
+          it.strftime(100, 41, id(font_small), BL, ":%S", t);
+          it.strftime(0, 59, id(font_small), BL, "%a %d %b %Y", t);
         } else {
-          it.print(10, 20, id(font_large), "--:--");
+          it.print(10, 41, id(font_large), BL, "--:--");
         }
       } else if (page == 1) {
         // ---- INDOOR ----
         draw_header("INDOOR - DHT11");
-        if (id(in_temp).has_state() && !isnan(id(in_temp).state)) {
-          it.printf(0, 18, id(font_medium), "%.1f C", id(in_temp).state);
+        if (id(in_temp).has_state()) {
+          it.printf(0, 32, id(font_medium), BL, "%.1f C", id(in_temp).state);
         } else {
-          it.print(0, 18, id(font_medium), "No reading");
+          it.print(0, 32, id(font_medium), BL, "No reading");
         }
-        if (id(in_hum).has_state() && !isnan(id(in_hum).state)) {
-          it.printf(0, 42, id(font_medium), "%.0f %% RH", id(in_hum).state);
+        if (id(in_hum).has_state()) {
+          it.printf(0, 56, id(font_medium), BL, "%.0f %% RH", id(in_hum).state);
         }
       } else if (page == 2) {
         // ---- OUTDOOR ----
-        // Header names the source honestly: this build imports weather
-        // from Home Assistant, it does not fetch Open-Meteo itself.
-        it.printf(0, 0, id(font_small), "%s - HOME ASSISTANT", "${location_name}");
+        // "HA" names the source honestly (Home Assistant, not Open-Meteo);
+        // the full name would clip an 8-character location_name.
+        it.printf(0, 7, id(font_small), BL, "%s - HA", "${location_name}");
         it.line(0, 11, 127, 11, COLOR_ON);
-        if (!id(out_temp).has_state() || isnan(id(out_temp).state)) {
-          it.print(0, 16, id(font_small), "Waiting for first fetch...");
+        if (!id(out_temp).has_state()) {
+          it.print(0, 23, id(font_small), BL, "Waiting for first fetch...");
         } else {
-          if (id(out_hum).has_state() && !isnan(id(out_hum).state)) {
-            it.printf(0, 16, id(font_small), "%.1f C  %.0f %% RH", id(out_temp).state, id(out_hum).state);
+          const char *t_unit = (id(out_temp_unit).has_state() &&
+                                id(out_temp_unit).state.find('F') != std::string::npos) ? "F" : "C";
+          if (id(out_hum).has_state()) {
+            it.printf(0, 23, id(font_small), BL, "%.1f %s  %.0f %% RH", id(out_temp).state, t_unit, id(out_hum).state);
           } else {
-            it.printf(0, 16, id(font_small), "%.1f C", id(out_temp).state);
+            it.printf(0, 23, id(font_small), BL, "%.1f %s", id(out_temp).state, t_unit);
           }
-          // Home Assistant condition strings are not WMO codes, so they
-          // are mapped to the same short display labels the sketch uses.
-          // Anything unmapped shows as-is, so a new condition is never
-          // silently hidden.
+          // Home Assistant condition strings are not WMO codes and carry no
+          // intensity, so the labels do not claim one. Anything unmapped
+          // shows as-is, so a new condition is never silently hidden.
           std::string cond = "-";
           if (id(out_condition).has_state()) {
             std::string raw = id(out_condition).state;
@@ -184,51 +195,56 @@ display:
             else if (raw == "lightning") cond = "Thunderstorm";
             else if (raw == "lightning-rainy") cond = "Thunderstorm, rain";
             else if (raw == "pouring") cond = "Heavy rain";
-            else if (raw == "rainy") cond = "Moderate rain";
-            else if (raw == "snowy") cond = "Moderate snowfall";
-            else if (raw == "snowy-rainy") cond = "Snowy rain";
+            else if (raw == "rainy") cond = "Rain";
+            else if (raw == "snowy") cond = "Snow";
+            else if (raw == "snowy-rainy") cond = "Rain and snow";
             else if (raw == "windy" || raw == "windy-variant") cond = "Windy";
             else if (raw == "exceptional") cond = "Exceptional";
             else cond = raw;
           }
-          it.print(0, 28, id(font_small), cond.c_str());
-          if (id(out_wind).has_state() && !isnan(id(out_wind).state)) {
-            it.printf(0, 46, id(font_small), "Wind %.0f km/h", id(out_wind).state);
+          it.print(0, 35, id(font_small), BL, cond.c_str());
+          if (id(out_wind).has_state()) {
+            std::string w_unit = (id(out_wind_unit).has_state() && !id(out_wind_unit).state.empty())
+                                     ? id(out_wind_unit).state : "km/h";
+            it.printf(0, 53, id(font_small), BL, "Wind %.0f %s", id(out_wind).state, w_unit.c_str());
           } else {
-            it.print(0, 46, id(font_small), "Wind --");
+            it.print(0, 53, id(font_small), BL, "Wind --");
           }
           unsigned long mins = (millis() - id(weather_updated_ms)) / 60000UL;
-          it.printf(0, 54, id(font_small), "Updated %lu min ago", mins);
+          it.printf(0, 61, id(font_small), BL, "Updated %lu min ago", mins);
         }
       } else {
         // ---- SUMMARY ----
         draw_header("SUMMARY");
         if (have_time) {
-          it.strftime(0, 13, id(font_small), "Time %H:%M", t);
+          it.strftime(0, 20, id(font_small), BL, "Time %H:%M", t);
         } else {
-          it.print(0, 13, id(font_small), "Time --:--");
+          it.print(0, 20, id(font_small), BL, "Time --:--");
         }
-        if (id(in_temp).has_state() && !isnan(id(in_temp).state) &&
-            id(in_hum).has_state() && !isnan(id(in_hum).state)) {
-          it.printf(0, 21, id(font_small), "In %.1f C  %.0f %%", id(in_temp).state, id(in_hum).state);
+        if (id(in_temp).has_state() && id(in_hum).has_state()) {
+          it.printf(0, 28, id(font_small), BL, "In %.1f C  %.0f %%", id(in_temp).state, id(in_hum).state);
         } else {
-          it.print(0, 21, id(font_small), "In --");
+          it.print(0, 28, id(font_small), BL, "In --");
         }
-        if (!id(out_temp).has_state() || isnan(id(out_temp).state)) {
-          it.print(0, 29, id(font_small), "Out --");
-        } else if (id(out_hum).has_state() && !isnan(id(out_hum).state)) {
-          it.printf(0, 29, id(font_small), "Out %.1f C  %.0f %%", id(out_temp).state, id(out_hum).state);
+        if (!id(out_temp).has_state()) {
+          it.print(0, 36, id(font_small), BL, "Out --");
         } else {
-          it.printf(0, 29, id(font_small), "Out %.1f C", id(out_temp).state);
+          const char *t_unit = (id(out_temp_unit).has_state() &&
+                                id(out_temp_unit).state.find('F') != std::string::npos) ? "F" : "C";
+          if (id(out_hum).has_state()) {
+            it.printf(0, 36, id(font_small), BL, "Out %.1f %s  %.0f %%", id(out_temp).state, t_unit, id(out_hum).state);
+          } else {
+            it.printf(0, 36, id(font_small), BL, "Out %.1f %s", id(out_temp).state, t_unit);
+          }
         }
-        it.printf(0, 37, id(font_small), "Bright %d / 255", id(contrast_255));
+        it.printf(0, 44, id(font_small), BL, "Bright %d / 255", id(contrast_255));
         // ESPHome's own WiFi state, not the Arduino WiFi global (which
         // is not visible in ESPHome lambdas).
-        it.printf(0, 45, id(font_small), "WiFi %s", esphome::wifi::global_wifi_component->is_connected() ? "connected" : "DOWN");
-        it.printf(0, 53, id(font_small), "Up %lu min", millis() / 60000UL);
+        it.printf(0, 52, id(font_small), BL, "WiFi %s", esphome::wifi::global_wifi_component->is_connected() ? "connected" : "DOWN");
+        it.printf(0, 60, id(font_small), BL, "Up %lu min", millis() / 60000UL);
       }
       // Page dots, same positions as the sketch.
-      for (int i = 0; i < 4; i++) {
+      for (int i = 0; i < 4; ++i) {
         it.filled_rectangle(52 + i * 8, 61, 5, 2, i == page ? COLOR_ON : COLOR_OFF);
       }
 
@@ -252,11 +268,31 @@ globals:
     restore_value: no
     initial_value: '0'
 
+script:
+  # The sketch's PIR rule: any motion, button press, or encoder step
+  # restarts a 60 s timer, and the display blanks when it runs out
+  # while the PIR output is LOW. Only used with use_pir true.
+  - id: pir_blank
+    mode: restart
+    then:
+      - delay: 60s
+      - lambda: |-
+          if (!id(pir_sensor).state) {
+            id(oled).turn_off();
+          }
+  - id: user_activity
+    then:
+      - lambda: |-
+          if (${use_pir}) {
+            id(oled).turn_on();
+            id(pir_blank).execute();
+          }
+
 binary_sensor:
   # Nav button to GND, INPUT_PULLUP, pressed = LOW. The 30 ms
-  # delayed_on_off filter is the ESPHome form of the sketch's rule
-  # (a press counts only if the line was HIGH for at least 30 ms),
-  # so contact bounce under 30 ms on press or release is ignored.
+  # delayed_on_off filter stands in for the sketch's debounce (a press
+  # counts only if the line was HIGH for at least 30 ms): bounce under
+  # 30 ms is ignored, at the cost of a 30 ms delay on each press.
   # With use_encoder true, this same pin is the encoder's SW pin.
   - platform: gpio
     name: "Desk Gadget Button"
@@ -270,21 +306,18 @@ binary_sensor:
     filters:
       - delayed_on_off: 30ms
     on_press:
+      - script.execute: user_activity
       - lambda: |-
-          if (${use_pir}) {
-            id(oled).turn_on();
-          }
           if (${use_encoder}) {
             id(page_number) = (id(page_number) == 3) ? 0 : 3;
           } else {
             id(page_number) = (id(page_number) + 1) % 4;
           }
       - component.update: oled
-  # PIR OUT, INPUT_PULLDOWN like the sketch. The 60 s delayed_off
-  # filter is the ESPHome form of the sketch's blanking rule: the
-  # sensor stays ON for 60 s after the PIR output drops (plus the
-  # module's own delay-pot time), and only then does the display
-  # blank. With use_pir false, the actions below are compiled out.
+  # PIR OUT, INPUT_PULLDOWN like the sketch. No filter, so the Home
+  # Assistant motion entity follows the PIR output directly (plus the
+  # module's own delay-pot time); the 60 s blanking is pir_blank above.
+  # With use_pir false, the display actions below are compiled out.
   - platform: gpio
     name: "Desk Gadget Motion"
     id: pir_sensor
@@ -294,23 +327,22 @@ binary_sensor:
       mode:
         input: true
         pulldown: true
-    filters:
-      - delayed_off: 60s
     on_press:
       - lambda: |-
           if (${use_pir}) {
             id(oled).turn_on();
+            id(pir_blank).stop();
           }
     on_release:
       - lambda: |-
           if (${use_pir}) {
-            id(oled).turn_off();
+            id(pir_blank).execute();
           }
 
 sensor:
-  # DHT11, same 2.5 s interval as the sketch. A failed read publishes
-  # NaN; the display keeps showing the last good value, because it
-  # only draws a value when has_state() is true and it is not NaN.
+  # DHT11, same 2.5 s interval as the sketch. ESPHome's DHT component
+  # publishes NaN on a failed read; filter_out drops it, so the display
+  # and Home Assistant keep the last good value, as the sketch does.
   # DHT11 limits are +/-2 C / +/-5% RH: a rough room sensor, not a
   # precision instrument.
   - platform: dht
@@ -324,6 +356,8 @@ sensor:
       state_class: measurement
       unit_of_measurement: "°C"
       accuracy_decimals: 1
+      filters:
+        - filter_out: nan
     humidity:
       name: "Desk Gadget Indoor Humidity"
       id: in_hum
@@ -331,6 +365,8 @@ sensor:
       state_class: measurement
       unit_of_measurement: "%"
       accuracy_decimals: 0
+      filters:
+        - filter_out: nan
   # Potentiometer wiper, same 50 ms poll as the sketch. Internal: it
   # drives the display only, it is not a Home Assistant entity.
   # The C3 ADC tops out around 2.5 V at 12 dB attenuation (ESPHome's
@@ -379,18 +415,14 @@ sensor:
     on_clockwise:
       - lambda: |-
           if (${use_encoder}) {
-            if (${use_pir}) {
-              id(oled).turn_on();
-            }
+            id(user_activity).execute();
             id(page_number) = (id(page_number) + 1) % 4;
           }
       - component.update: oled
     on_anticlockwise:
       - lambda: |-
           if (${use_encoder}) {
-            if (${use_pir}) {
-              id(oled).turn_on();
-            }
+            id(user_activity).execute();
             id(page_number) = (id(page_number) + 3) % 4;
           }
       - component.update: oled
@@ -405,19 +437,21 @@ sensor:
     name: "Desk Gadget Uptime"
     id: uptime_sensor
   # Outdoor weather imported from Home Assistant. These sensors are
-  # internal by default in ESPHome (they are not re-exported back to
-  # Home Assistant). Units are set here because ESPHome does not
-  # inherit them from Home Assistant. Wind assumes a metric Home
-  # Assistant (km/h); with an imperial Home Assistant the number
-  # would be in mph while the display still says km/h.
+  # internal (not re-exported back to Home Assistant). Values arrive in
+  # the weather entity's own units; the display takes those units from
+  # the temperature_unit and wind_speed_unit attributes below, so an
+  # imperial Home Assistant shows F and mph. A value Home Assistant
+  # cannot parse (for example an unavailable entity) arrives as NaN and
+  # is dropped, so the last good values stay on screen.
   - platform: homeassistant
     name: "Desk Gadget Outdoor Temperature"
     id: out_temp
     entity_id: ${weather_entity}
     attribute: temperature
-    unit_of_measurement: "°C"
     accuracy_decimals: 1
     internal: true
+    filters:
+      - filter_out: nan
     on_value:
       - lambda: |-
           id(weather_updated_ms) = millis();
@@ -429,14 +463,17 @@ sensor:
     unit_of_measurement: "%"
     accuracy_decimals: 0
     internal: true
+    filters:
+      - filter_out: nan
   - platform: homeassistant
     name: "Desk Gadget Outdoor Wind Speed"
     id: out_wind
     entity_id: ${weather_entity}
     attribute: wind_speed
-    unit_of_measurement: "km/h"
     accuracy_decimals: 0
     internal: true
+    filters:
+      - filter_out: nan
 
 text_sensor:
   # The weather entity's state is its condition string (sunny,
@@ -446,4 +483,16 @@ text_sensor:
     name: "Desk Gadget Outdoor Condition"
     id: out_condition
     entity_id: ${weather_entity}
+    internal: true
+  - platform: homeassistant
+    name: "Desk Gadget Outdoor Temperature Unit"
+    id: out_temp_unit
+    entity_id: ${weather_entity}
+    attribute: temperature_unit
+    internal: true
+  - platform: homeassistant
+    name: "Desk Gadget Outdoor Wind Unit"
+    id: out_wind_unit
+    entity_id: ${weather_entity}
+    attribute: wind_speed_unit
     internal: true

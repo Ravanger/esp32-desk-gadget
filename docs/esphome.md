@@ -36,8 +36,8 @@ the device and are not re-exported back to Home Assistant.
 
 1. Install ESPHome (the dashboard add-on, or `pip install esphome`
    on a computer with USB access to the board). The YAML needs
-   ESPHome 2024.4.0 or newer, because pot dimming uses
-   `set_contrast()`.
+   ESPHome 2024.6.0 or newer, because it uses the list form of
+   `ota:` (`platform: esphome`); `min_version` enforces this.
 2. Copy [secrets.example.yaml](../esphome/secrets.example.yaml) to
    `esphome/secrets.yaml` in the same directory and fill it in.
    `secrets.yaml` is gitignored and must never be committed.
@@ -53,8 +53,9 @@ the device and are not re-exported back to Home Assistant.
      Keep it to about 8 characters, or the outdoor header clips,
      same as the sketch.
    - `weather_entity` — your Home Assistant weather entity, for
-     example `weather.home`. It must expose temperature, humidity,
-     and wind_speed attributes.
+     example `weather.home`. It must expose a `temperature`
+     attribute; `humidity`, `wind_speed`, `temperature_unit`, and
+     `wind_speed_unit` are shown when present.
    - `use_encoder` — `false` for the push button (default), `true`
      for a rotary encoder on CLK 6 / DT 7 / SW 10. Changing it needs
      a recompile, like `USE_ENCODER` in the sketch.
@@ -108,38 +109,49 @@ that deliberately differs is listed separately, below the table.
 | ---------------- | ------------ |
 | Clock, Indoor, Outdoor, Summary pages, in that order | Same four pages, same order, same content per page |
 | Button steps one page per press, holding does not repeat | Same, via the GPIO binary sensor on GPIO 10 |
-| Press counts only if the line was HIGH for at least 30 ms | `delayed_on_off: 30ms` filter on the button |
+| Press counts only if the line was HIGH for at least 30 ms | `delayed_on_off: 30ms` filter on the button: bounce under 30 ms is ignored, at the cost of a 30 ms delay per press |
 | Encoder build: rotate steps both ways, press jumps to/from Summary | Same, via the rotary encoder sensor on CLK 6 / DT 7 and SW 10 |
 | Pot dims the display, contrast 8–255, changes under 5 ignored | Same: ADC on GPIO 1, clamped to 0–2500 mV, hysteresis over 4 |
 | C3 ADC tops out around 2.5 V, so the top of pot travel reads full brightness | Same clamp, same note |
-| DHT11 every 2.5 s, failed reads leave the last good value on screen | Same interval; the display only draws a value that exists and is not NaN |
+| DHT11 every 2.5 s, failed reads leave the last good value on screen | Same interval; ESPHome publishes NaN on a failed read and a `filter_out: nan` filter drops it, so the last good value stays (in Home Assistant too) |
 | Clock from NTP, configurable IANA time zone, `--:--` until synced | SNTP with the `timezone` substitution, `is_valid()` guard |
 | Summary: time, indoor, outdoor, brightness, WiFi status, uptime | Same six lines, same positions |
 | Page dots at the bottom, header title with a rule at y = 11 | Same positions |
-| PIR blanks the display 60 s after the room goes quiet, motion or a button press wakes it | `delayed_off: 60s` on the PIR sensor, plus the module's own delay-pot time |
+| PIR blanks the display 60 s after the last motion, button press, or encoder step (including 60 s after boot); motion or a press wakes it | Same rule, via a restarting 60 s `pir_blank` script; the Motion entity in Home Assistant follows the PIR output directly |
 | WiFi is 2.4 GHz only | Same; the YAML says so and the C3 has no 5 GHz radio |
 | No real credentials in the repo | Secrets only in gitignored `secrets.yaml` |
 
 ## Deliberate differences (read these before switching)
 
 - **Outdoor weather comes from Home Assistant, not Open-Meteo.**
-  The device no longer fetches weather itself. If Home Assistant is
-  down, the outdoor page keeps its last values and the "Updated N
-  min ago" line keeps counting, same as the sketch after a failed
-  fetch. The sketch remains the build to use for a standalone gadget.
+  The device no longer fetches weather itself, and the outdoor
+  header reads `<location_name> - HA` instead of
+  `<location_name> - OPEN-METEO`. If Home Assistant is down or the
+  entity becomes unavailable, the outdoor page keeps its last values
+  and the "Updated N min ago" line keeps counting, same as the
+  sketch after a failed fetch. The sketch remains the build to use
+  for a standalone gadget.
+- **"Updated N min ago" counts from the last change, not the last
+  fetch.** Home Assistant only sends the temperature when it changes,
+  so a steady temperature lets the counter climb even while Home
+  Assistant is up. The sketch counts from its last successful fetch,
+  every 10 minutes.
 - **Condition labels are mapped from Home Assistant conditions, not
   WMO codes.** Home Assistant reports conditions like `sunny`,
-  `partlycloudy`, and `rainy`; the display maps those to the same
-  short labels the sketch uses ("Clear sky", "Partly cloudy",
-  "Moderate rain"). A condition with no mapping shows as-is, so
-  nothing is silently hidden. The WMO code table in the sketch and
-  in verified-specs.md does not apply to this build.
-- **Wind assumes a metric Home Assistant.** The display labels wind
-  in km/h, like the sketch. With an imperial Home Assistant the
-  number would be in mph while the label still says km/h.
+  `partlycloudy`, and `rainy`, with no intensity. The display maps
+  them to short labels ("Clear sky", "Partly cloudy", "Rain") and
+  does not claim an intensity Home Assistant did not report, except
+  `pouring`, shown as "Heavy rain". A condition with no mapping shows
+  as-is, so nothing is silently hidden. The WMO code table in the
+  sketch and in verified-specs.md does not apply to this build.
+- **Outdoor units follow Home Assistant.** The sketch always shows
+  °C and km/h, from Open-Meteo. This build reads the weather
+  entity's `temperature_unit` and `wind_speed_unit` attributes, so
+  an imperial Home Assistant shows F and mph. Indoor values stay in
+  °C, like the sketch.
 - **The font is Roboto Mono, not the sketch's fixed-width font.**
-  Content and layout are the same, but pixel widths differ slightly,
-  so text sits a few pixels off the sketch's positions.
+  Text sits on the same baselines as the sketch's, but glyph shapes
+  and widths differ, so lines are a few pixels shorter or longer.
 - **No "Connecting WiFi..." splash at boot.** The sketch prints
   that line while joining WiFi; this build shows the first page as
   soon as the display updates (within a second). The clock still
@@ -149,15 +161,11 @@ that deliberately differs is listed separately, below the table.
   reports the failure in the logs (the I2C scan is on for exactly
   this reason); the screen simply stays dark. Check wiring if that
   happens.
-- **PIR sleep starts from motion, not from boot.** The sketch blanks
-  the display 60 s after boot if no motion ever happens. This build
-  blanks 60 s after motion ends; a room that was never occupied
-  leaves the display on until the first motion event. With
-  `use_pir` true and no PIR wired at all, the display stays on.
 - **No access-point fallback.** If WiFi is down, the device keeps
   displaying (clock `--:--`, outdoor waiting), the same way the
-  sketch continues after its 30 s WiFi timeout. There is no setup
-  hotspot to join.
+  sketch continues after its 30 s WiFi timeout. `reboot_timeout: 0s`
+  turns off ESPHome's default reboot after 15 minutes without WiFi.
+  There is no setup hotspot to join.
 
 ## Troubleshooting
 
@@ -180,29 +188,30 @@ that deliberately differs is listed separately, below the table.
 - **Device not discovered in Home Assistant**: add it manually with
   its IP address, or set a fixed address with `manual_ip` as shown
   in step 6 above.
-- **Display blanks right after boot with a PIR fitted**: the PIR
-  module's own delay-pot time may be set long, or `use_pir` is true
-  while the PIR output is wired backwards. Check the module's delay
-  setting and the wiring table in wiring.md.
+- **Display blanks 60 s after boot with a PIR fitted**: expected
+  when nothing moves, same as the sketch. If it blanks while you are
+  in front of it, check the PIR wiring against wiring.md and the
+  module's sensitivity setting.
 
 ## Guardrails
 
 `python scripts/check.py` checks the ESPHome files too: the YAML
-exists, it uses the frozen pins, a secrets example exists, and
-`secrets.yaml` is gitignored. When the `esphome` tool and a filled-in
-`esphome/secrets.yaml` are present, it also runs `esphome config`
-on the YAML and requires it to pass. When either is missing, that
-step prints SKIP instead of failing, so Arduino-only users are not
-blocked by a tool they do not have. Build output stays local and
-gitignored; never commit it or `secrets.yaml`. The link and image
-scan in check.py skips ESPHome's local build output under
-`.esphome/`, because it holds third-party component READMEs whose
-hotlinked images and relative links would otherwise trip it.
+exists, it assigns each frozen pin to the same role as the sketch
+and uses no other GPIO, a secrets example exists, and `secrets.yaml`
+is gitignored. When the `esphome` tool is installed, the full run
+(not `--quick`) also copies the YAML next to throwaway secrets under
+the gitignored `esphome/.esphome/check/` and requires
+`esphome config` to pass, so no real `secrets.yaml` is needed. When
+the tool is missing, that step prints SKIP instead of failing, so
+Arduino-only users are not blocked by a tool they do not have.
+Build output stays local and gitignored; never commit it or
+`secrets.yaml`. The link and image scan in check.py skips ESPHome's
+local build output under `.esphome/`, because it holds third-party
+component READMEs whose hotlinked images and relative links would
+otherwise trip it.
 
-Validated with ESPHome 2026.10.0: `esphome config` passes and
-`esphome compile` succeeds for the default (button) build, using
-34.1% of RAM and 54.0% of flash, so the firmware fits the OTA
-partition with room to spare.
+Validation status: see the ESPHome entry under
+[Tested toolchain](verified-specs.md#tested-toolchain).
 
 ## Sources
 

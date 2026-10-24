@@ -361,6 +361,17 @@ recommended core. Single-machine result: run by hand once, not yet
 reproduced elsewhere; scripts/check.py compiles core 2.0.17 only.
 Platform line used: `platform = https://github.com/pioarduino/platform-espressif32/releases/download/55.03.312-1/platform-espressif32.zip`.
 
+ESPHome build (`esphome/desk_gadget.yaml`), ESPHome 2026.10.0. The
+first PR #9 revision passed `esphome config` and compiled for the
+default (button) build: RAM 34.1% (109,584 / 321,296 bytes), flash
+54.0% (990,860 / 1,835,008 bytes). After the PR #9 review fixes
+(NaN filters, PIR blank script, baseline text, unit attributes,
+`reboot_timeout: 0s`), 2026-10-24: `esphome config` passes; the
+revised YAML has not been compiled. The YAML needs ESPHome 2024.6.0
+or newer (list-form `ota:`). ESPHome 2026.10.0 warns that an OTA
+`password` costs flash and RAM and recommends OTA `encryption`,
+which needs a newer ESPHome; the password is kept for now.
+
 ## What this audit could NOT verify
 
 - The exact SuperMini regulator part number, rating and thermal / dropout
@@ -380,6 +391,9 @@ Platform line used: `platform = https://github.com/pioarduino/platform-espressif
 - The ESP32-C3 ADC's per-chip calibration error; 0-2500 mV is the
   documented effective range at 11 dB attenuation, not a per-chip guarantee.
 - DHT22 figures against the primary Aosong datasheet (no verified URL).
+- The ESPHome build on hardware: flashing, the rendered pages on a
+  real OLED, and Home Assistant registration. Page layout was checked
+  only by rendering Roboto Mono offline at the configured sizes.
 
 ---
 

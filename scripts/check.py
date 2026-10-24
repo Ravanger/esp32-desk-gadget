@@ -28,10 +28,10 @@ Checks:
  12. Sketch compiles for esp32-c3-devkitm-1 with PlatformIO, both as
      shipped and with every option define set to 1
      (skipped, not failed, when PlatformIO is not installed or --quick).
- 13. ESPHome YAML exists, uses the frozen pins, ships a secrets
-     example, gitignores secrets.yaml, and passes `esphome config`
-     when the tool and a filled-in secrets.yaml are present
-     (skipped, not failed, otherwise).
+ 13. ESPHome YAML exists, assigns the frozen pins to the same roles
+     and uses no other GPIO, ships a secrets example, gitignores
+     secrets.yaml, and passes `esphome config` against throwaway
+     secrets (skipped, not failed, when esphome is absent or --quick).
 """
 
 import re
@@ -367,9 +367,25 @@ esphome_yaml = ROOT / "esphome" / "desk_gadget.yaml"
 check("ESPHome YAML exists", esphome_yaml.exists())
 if esphome_yaml.exists():
     yaml_text = esphome_yaml.read_text(encoding="utf-8")
-    for gpio in ["GPIO4", "GPIO5", "GPIO3", "GPIO10", "GPIO6", "GPIO7",
-                 "GPIO1", "GPIO0"]:
-        check(f"ESPHome YAML uses {gpio}", gpio in yaml_text)
+    ESPHOME_PIN_PATTERNS = {
+        "OLED_SDA": r"\bsda:\s*GPIO(\d+)",
+        "OLED_SCL": r"\bscl:\s*GPIO(\d+)",
+        "DHT_PIN": r"platform: dht\s+pin:\s*GPIO(\d+)",
+        "POT_PIN": r"platform: adc\s+pin:\s*GPIO(\d+)",
+        "BUTTON_PIN": r"id: nav_button\s+pin:\s+number:\s*GPIO(\d+)",
+        "PIR_PIN": r"id: pir_sensor\s+device_class: motion\s+pin:\s+number:\s*GPIO(\d+)",
+        "ENC_CLK": r"pin_a:\s+number:\s*GPIO(\d+)",
+        "ENC_DT": r"pin_b:\s+number:\s*GPIO(\d+)",
+    }
+    for name, pattern in ESPHOME_PIN_PATTERNS.items():
+        m = re.search(pattern, yaml_text)
+        want = EXPECTED_PINS[name]
+        check(f"ESPHome {name} == GPIO{want}", bool(m) and m.group(1) == want,
+              f"found {m.group(1) if m else 'nothing'}")
+    used = set(re.findall(r"\bGPIO(\d+)\b", yaml_text))
+    check("ESPHome YAML uses only the frozen pins",
+          used == set(EXPECTED_PINS.values()),
+          f"uses GPIO {sorted(used, key=int)}")
     check("ESPHome secrets example exists",
           (ROOT / "esphome" / "secrets.example.yaml").exists())
     gitignore = (ROOT / ".gitignore").read_text(encoding="utf-8") \
@@ -377,17 +393,26 @@ if esphome_yaml.exists():
     check(".gitignore covers esphome/secrets.yaml",
           "esphome/secrets.yaml" in gitignore)
     esphome_bin = shutil.which("esphome")
-    secrets_yaml = ROOT / "esphome" / "secrets.yaml"
-    if esphome_bin and secrets_yaml.exists():
+    if esphome_bin and not QUICK:
+        # Validate a copy next to throwaway secrets, so the check needs no
+        # real secrets.yaml. The directory is under gitignored .esphome/.
+        import base64
+        work = ROOT / "esphome" / ".esphome" / "check"
+        work.mkdir(parents=True, exist_ok=True)
+        shutil.copy(esphome_yaml, work / "desk_gadget.yaml")
+        (work / "secrets.yaml").write_text(
+            'wifi_ssid: "check"\nwifi_password: "check-password"\n'
+            f'api_key: "{base64.b64encode(os.urandom(32)).decode()}"\n'
+            'ota_password: "check"\n', encoding="utf-8")
         proc = subprocess.run(
-            [esphome_bin, "config", "esphome/desk_gadget.yaml"],
+            [esphome_bin, "config", str(work / "desk_gadget.yaml")],
             cwd=ROOT, capture_output=True, text=True, timeout=300)
         check("esphome config validates desk_gadget.yaml",
               proc.returncode == 0,
               (proc.stdout + proc.stderr)[-1500:] if proc.returncode else "")
     else:
-        print("[skip] esphome config — esphome tool or esphome/secrets.yaml "
-              "missing; the YAML is NOT config-validated by this run")
+        print("[skip] esphome config — esphome tool not found or --quick; "
+              "the YAML is NOT config-validated by this run")
 
 print()
 if FAILURES:

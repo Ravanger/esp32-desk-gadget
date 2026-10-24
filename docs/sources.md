@@ -132,6 +132,19 @@ All checked 2026-10-24. Figures taken from them are listed in
 - **KY-040 encoder module** (secondary: CLK/DT pull-ups to `+`;
   SW pull-up and resistor values unverified):
   <https://docs.wokwi.com/parts/wokwi-ky-040>
+- **ESPHome sources, tag 2026.10.0** (ESPHome build only:
+  `components/dht/dht.cpp` publishes NaN on a failed read;
+  `components/homeassistant/sensor` publishes NaN on an unparsable
+  state; `components/wifi` default `reboot_timeout` 15 min;
+  list-form `ota:` from 2024.6.0, `12db` attenuation from 2024.5.0;
+  `filter_out` matches NaN; font text anchored at the ascender
+  unless a `TextAlign` is given). Checked 2026-10-24:
+  <https://github.com/esphome/esphome/tree/2026.10.0/esphome/components>
+- **Home Assistant weather entity constants** (the 15 condition
+  strings; `temperature`, `humidity`, `wind_speed`,
+  `temperature_unit`, `wind_speed_unit` attributes). Checked
+  2026-10-24:
+  <https://github.com/home-assistant/core/blob/dev/homeassistant/components/weather/const.py>
 
 ## Images
 
