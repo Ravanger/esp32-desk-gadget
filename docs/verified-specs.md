@@ -366,8 +366,9 @@ first PR #9 revision passed `esphome config` and compiled for the
 default (button) build: RAM 34.1% (109,584 / 321,296 bytes), flash
 54.0% (990,860 / 1,835,008 bytes). After the PR #9 review fixes
 (NaN filters, PIR blank script, baseline text, unit attributes,
-`reboot_timeout: 0s`), 2026-10-24: `esphome config` passes; the
-revised YAML has not been compiled. The YAML needs ESPHome 2024.6.0
+`reboot_timeout: 0s`), 2026-10-24: `esphome config` passes and the
+default build compiles (ESP-IDF 5.5.6): RAM 34.2% (110,016 /
+321,296 bytes), flash 54.1% (993,340 / 1,835,008 bytes). The YAML needs ESPHome 2024.6.0
 or newer (list-form `ota:`). ESPHome 2026.10.0 warns that an OTA
 `password` costs flash and RAM and recommends OTA `encryption`,
 which needs a newer ESPHome; the password is kept for now.
