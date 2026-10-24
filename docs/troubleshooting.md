@@ -1,5 +1,12 @@
 # Troubleshooting
 
+> **Firmware:** the table below is written for the Arduino sketch
+> (Serial Monitor, `USE_*` defines, Open-Meteo). The wiring causes
+> and fixes apply to both firmwares. With the default ESPHome build,
+> read the log with `esphome logs`, use `use_encoder` / `use_pir` in
+> the YAML, and see the ESPHome-specific list in
+> [esphome.md](esphome.md#troubleshooting).
+
 | Symptom | Likely cause | Fix |
 | ------- | ------------ | --- |
 | OLED stays black, Serial says "not found at 0x3C" | Wrong I2C address (some modules are 0x3D), SDA/SCL swapped, I2C wired to the classic-ESP32 pins 21/22 or the C3's risky 8/9, or VCC/GND swapped on the module | On the SuperMini, SDA must be GPIO 4 and SCL GPIO 5, and the sketch must call `Wire.begin(OLED_SDA, OLED_SCL)` with those defines set to 4 and 5. GPIO 8 (strapping + onboard LED) and GPIO 9 (strapping + BOOT) are not I2C pins for this build. The sketch probes 0x3C at boot and, if nothing answers, repeats "OLED not found at 0x3C - check wiring/address" on Serial every 2 s and stops. Run an I2C scanner sketch to find the real address — the sketch hardcodes 0x3C, so a 0x3D module needs a code change, not just a rewire. Also confirm VCC is on 3V3, not 5V, and read the module silkscreen: some modules swap VCC and GND pin order. If the display lights but is shifted or garbled with correct wiring and address, suspect SH1106 (132×64 RAM, different mapping, needs its own driver) — many 1.3-inch panels sold as "SSD1306" are actually SH1106; check the driver chip, not the size. |

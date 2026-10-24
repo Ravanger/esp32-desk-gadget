@@ -1,5 +1,12 @@
 # How each piece works
 
+> **Firmware:** this page describes the Arduino sketch. The default
+> ESPHome build uses the same hardware and the same rules (clock,
+> DHT11 interval and averaging, button, encoder, pot, PIR), but gets
+> outdoor weather from Home Assistant instead of Open-Meteo and uses
+> `use_encoder` / `use_pir` instead of the `USE_*` defines. Its
+> differences are listed in [esphome.md](esphome.md).
+
 ## The clock — NTP over WiFi
 
 The SuperMini has no battery-backed RTC, so on boot it asks an
