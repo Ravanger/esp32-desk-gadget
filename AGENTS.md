@@ -47,6 +47,30 @@ conflicts with a general instruction, this file wins for this repo.
   TTP223 module, never a bare wire or foil pad.
 - The C3 has no 5 GHz radio. All WiFi instructions must say 2.4 GHz.
 
+## ESPHome alternative
+
+- `esphome/desk_gadget.yaml` is an alternative firmware for the same
+  hardware and wiring, for Home Assistant. The Arduino sketch stays
+  the recommended, standalone build. Never remove the sketch to make
+  room for ESPHome, and never change the wiring for ESPHome alone.
+- The ESPHome YAML must use the frozen pins above. Its
+  `use_encoder` / `use_pir` substitutions are the ESPHome form of
+  the sketch's `USE_ENCODER` / `USE_PIR` defines: changing them
+  needs a recompile.
+- Outdoor weather in the ESPHome build comes from a Home Assistant
+  weather entity, not Open-Meteo. The WMO code table does not apply
+  to it; condition labels are mapped from Home Assistant condition
+  strings (see docs/esphome.md for the mapping and the other
+  deliberate differences). Do not "fix" the ESPHome condition labels
+  back to WMO codes.
+- Never commit `esphome/secrets.yaml` or ESPHome build output. Both
+  are gitignored. The example file is `esphome/secrets.example.yaml`.
+- `scripts/check.py` validates the ESPHome YAML (pins, secrets
+  example, gitignore) and runs `esphome config` on it when the
+  `esphome` tool and a filled-in `secrets.yaml` are present;
+  otherwise that step prints SKIP. An ESPHome change that fails the
+  static checks is not done, same as a sketch change.
+
 ## Facts, not memory
 
 - Never assert a specification, pin, or weather code from memory.

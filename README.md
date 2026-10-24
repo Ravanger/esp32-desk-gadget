@@ -36,6 +36,8 @@ are blank until someone records them.
 - Indoor sensing with last-good-value retention on failed reads
 - OLED brightness via potentiometer (contrast control, no backlight)
 - Optional PIR wake/sleep support (compile-time flag)
+- Optional ESPHome firmware for native Home Assistant integration
+  (same hardware and screens, see [docs/esphome.md](docs/esphome.md))
 - Breadboard build; no soldering if your SuperMini and modules already have header pins fitted
 - No API keys or accounts; no host software at runtime (uploading
   needs the IDE or PlatformIO)
@@ -71,6 +73,8 @@ USB-C data cable (not a charge-only cable).
    and image credits
 9. [Verified specifications](docs/verified-specs.md) — checked facts,
    with sources and dates, that agents must not change from memory
+10. [ESPHome](docs/esphome.md) — the alternative ESPHome firmware for
+    Home Assistant, same hardware and screens as the sketch
 
 Then upload the sketch:
 
@@ -101,6 +105,20 @@ Optional, after the base build works: an HC-SR501 PIR on GPIO 0 can
 blank the display when the room is quiet and wake it on motion. Enable
 it with the `USE_PIR` flag in the sketch. The display blanks 60 s after the PIR's output drops
 (details in [docs/how-it-works.md](docs/how-it-works.md#optional-pir-sleep)).
+
+## ESPHome alternative
+
+The same gadget can run ESPHome firmware instead of the sketch:
+[esphome/desk_gadget.yaml](esphome/desk_gadget.yaml). Same wiring,
+same four screens, same button/encoder/pot/PIR behaviour. The
+differences are where the data goes: indoor readings, WiFi signal,
+and uptime are published to Home Assistant over the native ESPHome
+API, and outdoor weather is imported from a Home Assistant weather
+entity instead of fetched from Open-Meteo on the device. First flash
+is over USB, later updates over the air. The sketch stays the
+recommended build for a standalone gadget with no Home Assistant
+dependency. Full setup, parity table, and deliberate differences are
+in [docs/esphome.md](docs/esphome.md).
 
 ## Documentation
 

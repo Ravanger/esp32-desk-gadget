@@ -1,0 +1,449 @@
+# ESP32 Desk Gadget — ESPHome firmware (alternative to firmware/desk_gadget.ino)
+#
+# Same hardware, same wiring, same four screens as the Arduino sketch:
+# Clock, Indoor (DHT11), Outdoor (weather), Summary. The difference is
+# where the data goes and where the outdoor weather comes from:
+#
+# - Indoor temperature/humidity, WiFi signal, and uptime are published
+#   to Home Assistant over the native ESPHome API (no MQTT broker).
+# - Outdoor weather is imported FROM Home Assistant (a weather entity
+#   you already have), instead of fetched from Open-Meteo on the
+#   device. The Arduino sketch stays the recommended build if you want
+#   a standalone gadget with no Home Assistant dependency.
+#
+# Pins are the frozen SuperMini assignment from AGENTS.md and the
+# sketch. Do not renumber them here without changing the sketch,
+# docs/wiring.md, and scripts/check.py together:
+#   OLED SDA 4 / SCL 5, DHT11 3, button 10 (encoder SW 10),
+#   encoder CLK 6 / DT 7, pot wiper 1 (ADC1), PIR OUT 0.
+#
+# First flash over USB (the ESPHome dashboard or `esphome run`), then
+# updates go over the air. Secrets live in esphome/secrets.yaml, which
+# is gitignored and never committed; copy secrets.example.yaml to
+# secrets.yaml and fill it in first.
+
+substitutions:
+  name: "desk-gadget"
+  friendly_name: "Desk Gadget"
+  # Labelled example, same as the sketch. Replace with the target
+  # location before use.
+  timezone: "America/Toronto"
+  location_name: "TORONTO"
+  # Your Home Assistant weather entity, e.g. weather.home. It must
+  # expose temperature, humidity, and wind_speed attributes.
+  weather_entity: "weather.home"
+  # Navigation input. "false" = push button on GPIO 10 (default, one
+  # press steps to the next page). "true" = rotary encoder on
+  # CLK 6 / DT 7 / SW 10 (rotate steps both ways, press jumps to
+  # Summary and back to Clock). Changing this needs a recompile,
+  # exactly like USE_ENCODER in the sketch.
+  use_encoder: "false"
+  # "false" = no PIR wired (default). "true" = PIR on GPIO 0 blanks
+  # the display 60 s after the room goes quiet. Changing this needs
+  # a recompile, exactly like USE_PIR in the sketch.
+  use_pir: "false"
+  # WiFi transmit power. "20dB" is the default. If the board fails to
+  # join WiFi (a known SuperMini antenna weakness), try "8.5dB" —
+  # the ESPHome equivalent of WIFI_LOW_TX_POWER in the sketch.
+  wifi_tx_power: "20dB"
+
+esphome:
+  name: ${name}
+  friendly_name: ${friendly_name}
+  # Stable entity names in Home Assistant (no MAC suffix appended).
+  name_add_mac_suffix: false
+  # set_contrast() used for pot dimming needs ESPHome 2024.4.0 or newer.
+  min_version: 2024.4.0
+
+esp32:
+  board: esp32-c3-devkitm-1
+  framework:
+    type: arduino
+
+# The SuperMini has no USB serial chip; logging goes over native USB,
+# the same link the sketch uses with USB CDC On Boot.
+logger:
+  level: INFO
+  baud_rate: 115200
+  hardware_uart: USB_CDC
+
+# 2.4 GHz only: the ESP32-C3 has no 5 GHz radio.
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  output_power: ${wifi_tx_power}
+  # No access-point fallback, on purpose: if WiFi is down, the gadget
+  # keeps displaying (clock shows --:--, outdoor waits), the same way
+  # the sketch continues after its 30 s WiFi timeout.
+
+api:
+  encryption:
+    key: !secret api_key
+  # 0s disables the API-disconnect reboot, so the gadget keeps running
+  # and displaying when Home Assistant is down, like the sketch keeps
+  # running when WiFi is down.
+  reboot_timeout: 0s
+
+ota:
+  - platform: esphome
+    password: !secret ota_password
+
+time:
+  - platform: sntp
+    id: sntp_time
+    timezone: ${timezone}
+    servers:
+      - pool.ntp.org
+      - time.nist.gov
+
+i2c:
+  sda: GPIO4
+  scl: GPIO5
+  scan: true
+
+# Roboto Mono, the closest match to the sketch's fixed-width text.
+# Sizes mirror the sketch: 8 px (size 1), 16 px (size 2), 24 px (size 3).
+# Pixel positions therefore differ slightly from the sketch; the
+# content and layout of every page are the same.
+font:
+  - file: "gfonts://Roboto Mono"
+    id: font_small
+    size: 8
+  - file: "gfonts://Roboto Mono"
+    id: font_medium
+    size: 16
+  - file: "gfonts://Roboto Mono"
+    id: font_large
+    size: 24
+
+display:
+  - platform: ssd1306_i2c
+    model: "SSD1306 128x64"
+    address: 0x3C
+    id: oled
+    # 78% is 200/255, the sketch's starting contrast. The pot corrects
+    # it on its first read (within 50 ms).
+    contrast: 78%
+    # The sketch redraws once a second for the clock's seconds.
+    update_interval: 1s
+    lambda: |-
+      auto t = id(sntp_time).now();
+      bool have_time = t.is_valid();
+      int page = id(page_number);
+      auto draw_header = [&](const char *title) {
+        it.print(0, 0, id(font_small), title);
+        it.line(0, 11, 127, 11, COLOR_ON);
+      };
+      if (page == 0) {
+        // ---- CLOCK ----
+        draw_header("CLOCK");
+        if (have_time) {
+          it.strftime(10, 20, id(font_large), "%H:%M", t);
+          it.strftime(100, 34, id(font_small), ":%S", t);
+          it.strftime(0, 52, id(font_small), "%a %d %b %Y", t);
+        } else {
+          it.print(10, 20, id(font_large), "--:--");
+        }
+      } else if (page == 1) {
+        // ---- INDOOR ----
+        draw_header("INDOOR - DHT11");
+        if (id(in_temp).has_state() && !isnan(id(in_temp).state)) {
+          it.printf(0, 18, id(font_medium), "%.1f C", id(in_temp).state);
+        } else {
+          it.print(0, 18, id(font_medium), "No reading");
+        }
+        if (id(in_hum).has_state() && !isnan(id(in_hum).state)) {
+          it.printf(0, 42, id(font_medium), "%.0f %% RH", id(in_hum).state);
+        }
+      } else if (page == 2) {
+        // ---- OUTDOOR ----
+        // Header names the source honestly: this build imports weather
+        // from Home Assistant, it does not fetch Open-Meteo itself.
+        it.printf(0, 0, id(font_small), "%s - HOME ASSISTANT", "${location_name}");
+        it.line(0, 11, 127, 11, COLOR_ON);
+        if (!id(out_temp).has_state() || isnan(id(out_temp).state)) {
+          it.print(0, 16, id(font_small), "Waiting for first fetch...");
+        } else {
+          if (id(out_hum).has_state() && !isnan(id(out_hum).state)) {
+            it.printf(0, 16, id(font_small), "%.1f C  %.0f %% RH", id(out_temp).state, id(out_hum).state);
+          } else {
+            it.printf(0, 16, id(font_small), "%.1f C", id(out_temp).state);
+          }
+          // Home Assistant condition strings are not WMO codes, so they
+          // are mapped to the same short display labels the sketch uses.
+          // Anything unmapped shows as-is, so a new condition is never
+          // silently hidden.
+          std::string cond = "-";
+          if (id(out_condition).has_state()) {
+            std::string raw = id(out_condition).state;
+            if (raw == "sunny" || raw == "clear-night") cond = "Clear sky";
+            else if (raw == "partlycloudy") cond = "Partly cloudy";
+            else if (raw == "cloudy") cond = "Overcast";
+            else if (raw == "fog") cond = "Fog";
+            else if (raw == "hail") cond = "Hail";
+            else if (raw == "lightning") cond = "Thunderstorm";
+            else if (raw == "lightning-rainy") cond = "Thunderstorm, rain";
+            else if (raw == "pouring") cond = "Heavy rain";
+            else if (raw == "rainy") cond = "Moderate rain";
+            else if (raw == "snowy") cond = "Moderate snowfall";
+            else if (raw == "snowy-rainy") cond = "Snowy rain";
+            else if (raw == "windy" || raw == "windy-variant") cond = "Windy";
+            else if (raw == "exceptional") cond = "Exceptional";
+            else cond = raw;
+          }
+          it.print(0, 28, id(font_small), cond.c_str());
+          if (id(out_wind).has_state() && !isnan(id(out_wind).state)) {
+            it.printf(0, 46, id(font_small), "Wind %.0f km/h", id(out_wind).state);
+          } else {
+            it.print(0, 46, id(font_small), "Wind --");
+          }
+          unsigned long mins = (millis() - id(weather_updated_ms)) / 60000UL;
+          it.printf(0, 54, id(font_small), "Updated %lu min ago", mins);
+        }
+      } else {
+        // ---- SUMMARY ----
+        draw_header("SUMMARY");
+        if (have_time) {
+          it.strftime(0, 13, id(font_small), "Time %H:%M", t);
+        } else {
+          it.print(0, 13, id(font_small), "Time --:--");
+        }
+        if (id(in_temp).has_state() && !isnan(id(in_temp).state) &&
+            id(in_hum).has_state() && !isnan(id(in_hum).state)) {
+          it.printf(0, 21, id(font_small), "In %.1f C  %.0f %%", id(in_temp).state, id(in_hum).state);
+        } else {
+          it.print(0, 21, id(font_small), "In --");
+        }
+        if (!id(out_temp).has_state() || isnan(id(out_temp).state)) {
+          it.print(0, 29, id(font_small), "Out --");
+        } else if (id(out_hum).has_state() && !isnan(id(out_hum).state)) {
+          it.printf(0, 29, id(font_small), "Out %.1f C  %.0f %%", id(out_temp).state, id(out_hum).state);
+        } else {
+          it.printf(0, 29, id(font_small), "Out %.1f C", id(out_temp).state);
+        }
+        it.printf(0, 37, id(font_small), "Bright %d / 255", id(contrast_255));
+        // ESPHome's own WiFi state, not the Arduino WiFi global (which
+        // is not visible in ESPHome lambdas).
+        it.printf(0, 45, id(font_small), "WiFi %s", esphome::wifi::global_wifi_component->is_connected() ? "connected" : "DOWN");
+        it.printf(0, 53, id(font_small), "Up %lu min", millis() / 60000UL);
+      }
+      // Page dots, same positions as the sketch.
+      for (int i = 0; i < 4; i++) {
+        it.filled_rectangle(52 + i * 8, 61, 5, 2, i == page ? COLOR_ON : COLOR_OFF);
+      }
+
+globals:
+  # 0 clock, 1 indoor, 2 outdoor, 3 summary. Not restored: like the
+  # sketch, the gadget always boots to the clock page.
+  - id: page_number
+    type: int
+    restore_value: no
+    initial_value: '0'
+  # Current OLED contrast, 0-255, for the Summary page. Starts at the
+  # sketch's starting value; the pot corrects it on its first read.
+  - id: contrast_255
+    type: int
+    restore_value: no
+    initial_value: '200'
+  # millis() of the last outdoor update from Home Assistant, for the
+  # Outdoor page's "Updated N min ago" line.
+  - id: weather_updated_ms
+    type: uint32_t
+    restore_value: no
+    initial_value: '0'
+
+binary_sensor:
+  # Nav button to GND, INPUT_PULLUP, pressed = LOW. The 30 ms
+  # delayed_on_off filter is the ESPHome form of the sketch's rule
+  # (a press counts only if the line was HIGH for at least 30 ms),
+  # so contact bounce under 30 ms on press or release is ignored.
+  # With use_encoder true, this same pin is the encoder's SW pin.
+  - platform: gpio
+    name: "Desk Gadget Button"
+    id: nav_button
+    pin:
+      number: GPIO10
+      mode:
+        input: true
+        pullup: true
+      inverted: true
+    filters:
+      - delayed_on_off: 30ms
+    on_press:
+      - lambda: |-
+          if (${use_pir}) {
+            id(oled).turn_on();
+          }
+          if (${use_encoder}) {
+            id(page_number) = (id(page_number) == 3) ? 0 : 3;
+          } else {
+            id(page_number) = (id(page_number) + 1) % 4;
+          }
+      - component.update: oled
+  # PIR OUT, INPUT_PULLDOWN like the sketch. The 60 s delayed_off
+  # filter is the ESPHome form of the sketch's blanking rule: the
+  # sensor stays ON for 60 s after the PIR output drops (plus the
+  # module's own delay-pot time), and only then does the display
+  # blank. With use_pir false, the actions below are compiled out.
+  - platform: gpio
+    name: "Desk Gadget Motion"
+    id: pir_sensor
+    device_class: motion
+    pin:
+      number: GPIO0
+      mode:
+        input: true
+        pulldown: true
+    filters:
+      - delayed_off: 60s
+    on_press:
+      - lambda: |-
+          if (${use_pir}) {
+            id(oled).turn_on();
+          }
+    on_release:
+      - lambda: |-
+          if (${use_pir}) {
+            id(oled).turn_off();
+          }
+
+sensor:
+  # DHT11, same 2.5 s interval as the sketch. A failed read publishes
+  # NaN; the display keeps showing the last good value, because it
+  # only draws a value when has_state() is true and it is not NaN.
+  # DHT11 limits are +/-2 C / +/-5% RH: a rough room sensor, not a
+  # precision instrument.
+  - platform: dht
+    pin: GPIO3
+    model: DHT11
+    update_interval: 2.5s
+    temperature:
+      name: "Desk Gadget Indoor Temperature"
+      id: in_temp
+      device_class: temperature
+      state_class: measurement
+      unit_of_measurement: "°C"
+      accuracy_decimals: 1
+    humidity:
+      name: "Desk Gadget Indoor Humidity"
+      id: in_hum
+      device_class: humidity
+      state_class: measurement
+      unit_of_measurement: "%"
+      accuracy_decimals: 0
+  # Potentiometer wiper, same 50 ms poll as the sketch. Internal: it
+  # drives the display only, it is not a Home Assistant entity.
+  # The C3 ADC tops out around 2.5 V at 12 dB attenuation (ESPHome's
+  # name for the 11 dB setting the sketch uses), so the top roughly
+  # 24% of pot travel reads full brightness — expected, not a fault,
+  # and the same clamp the sketch applies.
+  - platform: adc
+    pin: GPIO1
+    attenuation: 12db
+    update_interval: 50ms
+    name: "Desk Gadget Potentiometer"
+    id: pot_adc
+    internal: true
+    accuracy_decimals: 3
+    on_value:
+      - lambda: |-
+          float mv = x * 1000.0f;
+          if (mv < 0.0f) mv = 0.0f;
+          if (mv > 2500.0f) mv = 2500.0f;
+          int target = (int) (8 + (mv / 2500.0f) * 247.0f);
+          if (abs(target - id(contrast_255)) > 4) {
+            id(contrast_255) = target;
+            id(oled).set_contrast(target / 255.0f);
+          }
+  # Rotary encoder, CLK 6 / DT 7, INPUT_PULLUP like the sketch. The
+  # sensor is always instantiated, but with use_encoder false its
+  # actions are compiled out and the unwired pins sit pulled high,
+  # so it cannot step pages on its own. Internal: page changes are
+  # shown on the display, the raw step count is not a sensor.
+  # If the encoder double-steps, try resolution 2 (see docs/esphome.md).
+  - platform: rotary_encoder
+    name: "Desk Gadget Encoder"
+    id: encoder
+    internal: true
+    pin_a:
+      number: GPIO6
+      mode:
+        input: true
+        pullup: true
+    pin_b:
+      number: GPIO7
+      mode:
+        input: true
+        pullup: true
+    resolution: 1
+    on_clockwise:
+      - lambda: |-
+          if (${use_encoder}) {
+            if (${use_pir}) {
+              id(oled).turn_on();
+            }
+            id(page_number) = (id(page_number) + 1) % 4;
+          }
+      - component.update: oled
+    on_anticlockwise:
+      - lambda: |-
+          if (${use_encoder}) {
+            if (${use_pir}) {
+              id(oled).turn_on();
+            }
+            id(page_number) = (id(page_number) + 3) % 4;
+          }
+      - component.update: oled
+  # Home Assistant entities for automations. The Summary page's WiFi
+  # line uses the WiFi component's own connected state, and uptime
+  # uses millis(), like the sketch uses WiFi.status() and millis().
+  - platform: wifi_signal
+    name: "Desk Gadget WiFi Signal"
+    id: wifi_signal_sensor
+    update_interval: 60s
+  - platform: uptime
+    name: "Desk Gadget Uptime"
+    id: uptime_sensor
+  # Outdoor weather imported from Home Assistant. These sensors are
+  # internal by default in ESPHome (they are not re-exported back to
+  # Home Assistant). Units are set here because ESPHome does not
+  # inherit them from Home Assistant. Wind assumes a metric Home
+  # Assistant (km/h); with an imperial Home Assistant the number
+  # would be in mph while the display still says km/h.
+  - platform: homeassistant
+    name: "Desk Gadget Outdoor Temperature"
+    id: out_temp
+    entity_id: ${weather_entity}
+    attribute: temperature
+    unit_of_measurement: "°C"
+    accuracy_decimals: 1
+    internal: true
+    on_value:
+      - lambda: |-
+          id(weather_updated_ms) = millis();
+  - platform: homeassistant
+    name: "Desk Gadget Outdoor Humidity"
+    id: out_hum
+    entity_id: ${weather_entity}
+    attribute: humidity
+    unit_of_measurement: "%"
+    accuracy_decimals: 0
+    internal: true
+  - platform: homeassistant
+    name: "Desk Gadget Outdoor Wind Speed"
+    id: out_wind
+    entity_id: ${weather_entity}
+    attribute: wind_speed
+    unit_of_measurement: "km/h"
+    accuracy_decimals: 0
+    internal: true
+
+text_sensor:
+  # The weather entity's state is its condition string (sunny,
+  # partlycloudy, rainy, ...). Mapped to display labels in the
+  # display lambda. Internal: not re-exported to Home Assistant.
+  - platform: homeassistant
+    name: "Desk Gadget Outdoor Condition"
+    id: out_condition
+    entity_id: ${weather_entity}
+    internal: true

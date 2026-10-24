@@ -383,4 +383,4 @@ Platform line used: `platform = https://github.com/pioarduino/platform-espressif
 
 ---
 
-[← Previous: Sources & credits](sources.md) · [Contents](../README.md)
+[← Previous: Sources & credits](sources.md) · [Contents](../README.md) · [Next: ESPHome →](esphome.md)
