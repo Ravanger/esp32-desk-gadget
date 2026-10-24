@@ -118,6 +118,7 @@ that deliberately differs is listed separately, below the table.
 | Pot dims the display, contrast 8–255, changes under 5 ignored | Same: ADC on GPIO 1, clamped to 0–2500 mV, hysteresis over 4 |
 | C3 ADC tops out around 2.5 V, so the top of pot travel reads full brightness | Same clamp, same note |
 | DHT11 every 2.5 s, failed reads leave the last good value on screen | Same interval; ESPHome publishes NaN on a failed read and a `filter_out: nan` filter drops it, so the last good value stays (in Home Assistant too) |
+| Indoor values are the mean of the last 5 good reads (`DHT_AVG_N`) | `sliding_window_moving_average` (window 5, send every 1) after `filter_out: nan`; Home Assistant receives the averaged values too |
 | Clock from NTP, configurable IANA time zone, `--:--` until synced | SNTP with the `timezone` substitution, `is_valid()` guard |
 | Summary: time, indoor, outdoor, brightness, WiFi status, uptime | Same six lines, same positions |
 | Page dots at the bottom, header title with a rule at y = 11 | Same positions |

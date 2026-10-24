@@ -51,7 +51,8 @@ wiring is only ~15 jumpers, so this goes fast.
 3. **Add the DHT11.** Power down, add its 3 wires (DATA to GPIO 3),
    power up, press (or rotate) to the Indoor page.
    - **Test:** plausible room readings appear within a few seconds and
-     update every 2.5 s. Breathe on the sensor — humidity should climb.
+     update every 2.5 s. Breathe on the sensor — humidity should climb
+     (over about 12 s, because the display averages the last 5 reads).
      "No reading" persisting = see the DHT row in
      [troubleshooting.md](troubleshooting.md).
 4. **Outdoor weather.** No new wiring — press (or rotate) to the outdoor page.

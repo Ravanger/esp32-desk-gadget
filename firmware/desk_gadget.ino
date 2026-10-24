@@ -68,7 +68,10 @@ DHT dht(DHT_PIN, DHT11);
 
 // ---------- State ----------
 int page = 0;  // 0 clock, 1 indoor, 2 weather, 3 summary
-float inTemp = NAN, inHum = NAN;  // last GOOD DHT11 readings
+float inTemp = NAN, inHum = NAN;  // mean of the last DHT_AVG_N GOOD DHT11 readings
+const int DHT_AVG_N = 5;  // ~12.5 s at 2.5 s per read; smooths DHT11 1-step flicker
+float tempHist[DHT_AVG_N], humHist[DHT_AVG_N];
+int histCount = 0, histPos = 0;
 float outTemp = NAN, outHum = NAN, outWind = NAN;
 int outCode = -1;
 bool weatherOK = false;
@@ -380,14 +383,23 @@ void loop() {
     }
   }
 
-  // --- DHT11 every 2.5 s; keep last good values on a failed read ---
+  // --- DHT11 every 2.5 s, averaged over the last DHT_AVG_N good reads; a failed read changes nothing ---
   if (now - lastDHT >= 2500) {
     lastDHT = now;
     float h = dht.readHumidity();
     float t = dht.readTemperature();
     if (!isnan(h) && !isnan(t)) {
-      inHum = h;
-      inTemp = t;
+      tempHist[histPos] = t;
+      humHist[histPos] = h;
+      histPos = (histPos + 1) % DHT_AVG_N;
+      if (histCount < DHT_AVG_N) ++histCount;
+      float sumT = 0, sumH = 0;
+      for (int i = 0; i < histCount; ++i) {
+        sumT += tempHist[i];
+        sumH += humHist[i];
+      }
+      inTemp = sumT / histCount;
+      inHum = sumH / histCount;
     }
   }
 

@@ -343,6 +343,8 @@ sensor:
   # DHT11, same 2.5 s interval as the sketch. ESPHome's DHT component
   # publishes NaN on a failed read; filter_out drops it, so the display
   # and Home Assistant keep the last good value, as the sketch does.
+  # The moving average (last 5 good reads, ~12.5 s) matches the sketch's
+  # DHT_AVG_N and smooths the DHT11's whole-degree / whole-percent flicker.
   # DHT11 limits are +/-2 C / +/-5% RH: a rough room sensor, not a
   # precision instrument.
   - platform: dht
@@ -358,6 +360,9 @@ sensor:
       accuracy_decimals: 1
       filters:
         - filter_out: nan
+        - sliding_window_moving_average:
+            window_size: 5
+            send_every: 1
     humidity:
       name: "Desk Gadget Indoor Humidity"
       id: in_hum
@@ -367,6 +372,9 @@ sensor:
       accuracy_decimals: 0
       filters:
         - filter_out: nan
+        - sliding_window_moving_average:
+            window_size: 5
+            send_every: 1
   # Potentiometer wiper, same 50 ms poll as the sketch. Internal: it
   # drives the display only, it is not a Home Assistant entity.
   # The C3 ADC tops out around 2.5 V at 12 dB attenuation (ESPHome's
