@@ -235,12 +235,15 @@ for md in sorted((ROOT / "docs").glob("*.md")):
           bool(tail) and "[Contents](../README.md)" in tail[0])
 
 # --- 11. Secrets and line endings -----------------------------------------
-ls = subprocess.run(["git", "ls-files", "--eol"], cwd=ROOT,
-                    capture_output=True, text=True)
-tracked = ls.stdout.splitlines() if ls.returncode == 0 else []
+try:
+    ls = subprocess.run(["git", "ls-files", "--eol"], cwd=ROOT,
+                        capture_output=True, text=True)
+    tracked = ls.stdout.splitlines() if ls.returncode == 0 else []
+except FileNotFoundError:
+    tracked = []
 if not tracked:
     print("[skip] secrets / LF checks — git ls-files returned nothing "
-          "(not a git checkout?)")
+          "(git missing or not a git checkout?)")
 SECRET_RE = re.compile(
     r'(?i)(password|passwd|psk)\s*=\s*"(?!YOUR_)[^"]+"'
     r'|#define\s+WIFI_(SSID|PASSWORD)\s+"(?!YOUR_)[^"]*[^"\s][^"]*"')
@@ -296,15 +299,18 @@ if pio:
         # dependencies through its registry, which some networks block.
         clone_failed = False
         for repo, tag in PINNED_LIBS:
-            clone = subprocess.run(
-                ["git", "clone", "-q", "--depth", "1", "--branch", tag,
-                 f"https://github.com/{repo}.git",
-                 str(td / "lib" / repo.split("/")[1])],
-                capture_output=True, text=True, timeout=300)
-            if clone.returncode != 0:
+            try:
+                clone = subprocess.run(
+                    ["git", "clone", "-q", "--depth", "1", "--branch", tag,
+                     f"https://github.com/{repo}.git",
+                     str(td / "lib" / repo.split("/")[1])],
+                    capture_output=True, text=True, timeout=300)
+                err = (clone.stderr.strip() or f"exit {clone.returncode}") if clone.returncode else ""
+            except (FileNotFoundError, subprocess.TimeoutExpired) as e:
+                err = str(e)
+            if err:
                 clone_failed = True
-                print(f"[skip] git clone {repo}@{tag} failed: "
-                      f"{clone.stderr.strip()}")
+                print(f"[skip] git clone {repo}@{tag} failed: {err}")
         src = td / "src"
         src.mkdir()
         (src / "main.cpp").write_text(

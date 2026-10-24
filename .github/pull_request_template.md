@@ -4,7 +4,7 @@
 
 ## Checklist
 
-- [ ] `python scripts/check.py` output pasted below (note whether the compile check was SKIP)
+- [ ] `python scripts/check.py` (or `python3 ...`) output pasted below (note whether the compile check was SKIP)
 - [ ] One concern per change, small diff
 - [ ] Pins unchanged, or AGENTS.md (frozen pin table) updated in this change
 - [ ] Facts sourced in `docs/verified-specs.md` or `docs/sources.md`, with check date
