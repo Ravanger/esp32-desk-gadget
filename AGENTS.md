@@ -54,7 +54,7 @@ conflicts with a general instruction, this file wins for this repo.
   if a fact changes.
 - WMO weather codes must match Open-Meteo's official table exactly,
   including code 97 (Heavy thunderstorm). The full pinned list is in
-  `scripts/check.sh`. Do not add, drop, or renumber codes.
+  `scripts/check.py`. Do not add, drop, or renumber codes.
 - DHT11 limits are ±2 °C / ±5 % RH, 1 Hz maximum sampling. Do not
   present it as a precision instrument.
 - Do not invent prices, costs, or availability. This guide makes no
@@ -75,7 +75,7 @@ conflicts with a general instruction, this file wins for this repo.
 
 ## Verification before claiming
 
-- Run `python3 scripts/check.sh` before pushing, and include its
+- Run `python scripts/check.py` before pushing, and include its
   output in the change summary. A change that fails the checks is
   not done. The script includes a wiring-consistency check
   (docs/wiring.md vs the sketch defines) and a PlatformIO compile
@@ -95,15 +95,17 @@ conflicts with a general instruction, this file wins for this repo.
 - Work on a branch, never push directly to `main`. Open a pull
   request; merge via the pull request (web UI or API — API merges
   were proven to work with the current token on 2026-10-23).
-- Checks run locally by default (`scripts/check.sh`). There is no
-  hosted CI enabled by default, because this repository is private
-  and GitHub Actions is metered for private repos (included
-  allowance only, then billed per minute), not free.
-- To opt in to hosted CI: copy
-  `.github/workflows/check.yml.example` to
-  `.github/workflows/check.yml`, and set the account spending limit
-  to $0 so workflows stop instead of billing once the allowance is
-  used. Linux runners only — never macOS or Windows runners for
-  this project.
 - Tag known-good states (for example `v1-c3-pins`) so rollback is a
   checkout, not a reconstruction.
+
+## Local checks and hooks
+
+There is no hosted CI (private repo, GitHub Actions is metered).
+
+- One-time setup: `git config core.hooksPath .githooks`
+- pre-commit runs `scripts/check.py --quick` (no compile).
+- pre-push runs the full `scripts/check.py` and blocks pushes to
+  `main`/`master`.
+- Never bypass hooks with `--no-verify`.
+- Agents without hook support must run `python scripts/check.py`
+  manually and paste its output.

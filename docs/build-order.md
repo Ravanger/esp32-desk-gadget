@@ -2,19 +2,24 @@
 
 Don't wire everything and then debug everything. Build in this order;
 each stage ends with a check that proves it works before the next part
-goes on. Total wiring is only ~15 jumpers, so this goes fast.
+goes on. The matching checklist with expected values is
+[hardware-tests.md](hardware-tests.md). Stages 1–5 share their numbers
+with it (OLED, clock and encoder, DHT11, weather, pot). It adds a
+stage 0 (unpowered checks), stage 6 here (leave it running) has no test
+page there, and the PIR is stage 7 here but stage 6 there. Total
+wiring is only ~15 jumpers, so this goes fast.
 
 1. **OLED only.** Wire just the display (4 wires: SDA GPIO 4, SCL
-   GPIO 5, [wiring.md](wiring.md)). Upload a minimal test only:
-   `display.begin(SSD1306_SWITCHCAPVCC, 0x3C)`, print "Hello".
-   Do not use the full sketch for this stage: with the shipped
-   placeholder WiFi credentials it waits out its 30 s WiFi timeout
-   before drawing anything, so "text on the OLED" is not a stage-1
-   test for the full sketch. (If Serial shows nothing at all, check
+   GPIO 5, [wiring.md](wiring.md)) and upload the full sketch; it works
+   for bring-up with nothing else connected. With wrong or missing
+   WiFi settings the OLED shows "Connecting WiFi..." for up to 30 s,
+   then the clock page with `--:--`. Until the pot is wired, GPIO 1
+   floats and the brightness may wander; tie GPIO 1 to 3V3 (reads full
+   scale = full brightness) until stage 5 if that bothers you. (If Serial shows nothing at all, check
    USB CDC On Boot is enabled — see
    [libraries-and-setup.md](libraries-and-setup.md).)
    - **Test:** text on the OLED, and Serial Monitor (115200 baud) shows
-     no "OLED not found" error. Black screen? Jump to
+     no "OLED not found at 0x3C" message. Black screen? Jump to
      [troubleshooting.md](troubleshooting.md) before continuing.
 2. **WiFi + clock + encoder.** Fill in the WiFi credentials,
    location, and time-zone settings from
@@ -45,36 +50,37 @@ goes on. Total wiring is only ~15 jumpers, so this goes fast.
      Screenshot: LastMinuteEngineers.
 3. **Add the DHT11.** Power down, add its 3 wires (DATA to GPIO 3),
    power up, rotate to the Indoor page.
-   - **Test:** plausible room readings appear within ~4 seconds and
-     update every 2 s. Breathe on the sensor — humidity should climb.
+   - **Test:** plausible room readings appear within a few seconds and
+     update every 2.5 s. Breathe on the sensor — humidity should climb.
      "No reading" persisting = see the DHT row in
      [troubleshooting.md](troubleshooting.md).
 4. **Outdoor weather.** No new wiring — rotate to the outdoor page.
    Also paste the Open-Meteo URL from [how-it-works.md](how-it-works.md)
    (with the configured coordinates and time zone filled in) into a
    browser once, to see the JSON the code is parsing.
-   - **Test:** the page fills in on the first fetch (it runs once at
-     boot) and the numbers match the browser's JSON. Serial Monitor
-     prints the HTTP code if the fetch fails.
+   - **Test:** the page fills in on the first fetch (it runs as soon
+     as WiFi is connected, then every 10 minutes after a success and
+     every 60 s after a failure) and the numbers match the browser's
+     JSON. Serial Monitor prints the HTTP code if the fetch fails.
 5. **Add the potentiometer.** Power down, wire the pot (ends to
    3V3/GND, wiper to GPIO 1), power up.
    - **Test:** turning the pot sweeps the OLED from dim to full
      brightness, smoothly, on every page. The Summary page's "Bright"
-     value should track it from ~8 to 255.
+     value should track it from about 8 to about 255; the top
+     part of the travel (roughly the last quarter on a pot across 3V3)
+     is full brightness because the ADC saturates near 2.5 V.
 6. **Leave it running.** Park it on the Clock page, powered over
    USB-C. Check it again in 15 minutes.
    - **Test:** clock still correct, weather page has refreshed at least
      once, indoor page still updating, knob and pot still responsive
      (this is the check that would catch a blocking `delay()` if one
      ever crept in).
-7. **Optional: PIR wake/sleep.** Wire the PIR (5 V in, OUT to
+7. **Optional: PIR wake/sleep.** Wire the PIR (5V pin to its VCC, OUT to
    GPIO 0), set `USE_PIR` to 1 in the sketch, re-upload.
-   - **Test:** wave at it — display on. Leave the room — display
-     blanks 60 s after the PIR last reads HIGH, plus whatever delay
-     the module's own delay potentiometer is set to (set it to
-     minimum for the stated behaviour). Note the HC-SR501 itself
-     needs a minute to settle after power-up and will trigger
-     spuriously until then.
+   - **Test:** wave at it — display on. Leave the room — the display
+     blanks 60 s after the PIR's output drops (see [how-it-works.md](how-it-works.md#optional-pir-sleep)); turning or
+     pressing the encoder also wakes it. The HC-SR501 needs about a minute to warm up after
+     power-up and may trigger spuriously until then.
 
 ---
 

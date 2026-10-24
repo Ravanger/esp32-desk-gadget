@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 """Local guardrail checks for the ESP32 Desk Gadget repository.
 
-Run from the repository root:  ./scripts/check.sh
-(or: python3 scripts/check.sh)
+Run from the repository root:  python scripts/check.py [--quick]
+(python3 also works). --quick skips the PlatformIO compile check.
 
 Exit code 0 = all checks passed. Any failure prints FAIL and exits 1.
-No network access, no hosted CI, no cost. See AGENTS.md for the rules
+The compile check clones pinned libraries from GitHub (git clone); the
+other checks need no network. No hosted CI, no cost. See AGENTS.md for the rules
 these checks enforce.
 
 Checks:
@@ -18,15 +19,21 @@ Checks:
   6. No personal/kit/cost phrases in docs.
   7. All internal markdown links resolve.
   8. Wiring table in docs/wiring.md matches the sketch pin defines.
-  9. Sketch compiles for esp32-c3-devkitm-1 with PlatformIO
-     (skipped, not failed, when PlatformIO is not installed).
+  9. Sketch avoids strapping/classic pins, uses an ADC1 pot pin, makes
+     no blocking getLocalTime(&t), and has no long delay() in loop().
+ 10. Docs have no price/cost wording and end with a Contents nav line.
+ 11. No secrets; tracked text files use LF line endings.
+ 12. Sketch compiles for esp32-c3-devkitm-1 with PlatformIO
+     (skipped, not failed, when PlatformIO is not installed or --quick).
 """
 
 import re
+import subprocess
 import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
+QUICK = "--quick" in sys.argv[1:]
 FAILURES = []
 
 
@@ -102,14 +109,19 @@ for doc in ["README.md", "docs/libraries-and-setup.md"]:
         check(f"config {name} in {doc}", name in text)
 
 # --- 5. No real credentials -------------------------------------------------
-check("WIFI_SSID is placeholder",
-      '"YOUR_WIFI_NAME"' in sketch)
-check("WIFI_PASSWORD is placeholder",
-      '"YOUR_WIFI_PASSWORD"' in sketch)
+for _name, _value in [("WIFI_SSID", "YOUR_WIFI_NAME"),
+                      ("WIFI_PASSWORD", "YOUR_WIFI_PASSWORD")]:
+    _exact = re.findall(
+        rf'^[ \t]*const[ \t]+char[ \t]*\*[ \t]*{_name}[ \t]*=[ \t]*"{_value}"[ \t]*;[ \t]*(?://.*)?$',
+        sketch, re.M)
+    _assigns = re.findall(rf'\b{_name}\b[ \t]*=(?!=)|#[ \t]*define[ \t]+{_name}\b',
+                          sketch)
+    check(f"{_name} is the placeholder, assigned exactly once",
+          len(_exact) == 1 and len(_assigns) == 1)
 
 # --- 6. No personal / kit / cost phrases -----------------------------------
 BANNED = ["starter kit", "45-in-1", "parts on hand", "micro USB",
-          "$0, all parts"]
+          "$0, all parts", "price", "cheap"]
 for md in sorted((ROOT / "docs").glob("*.md")) + [ROOT / "README.md"]:
     text = md.read_text(encoding="utf-8").lower()
     for phrase in BANNED:
@@ -129,8 +141,8 @@ for md in sorted(ROOT.rglob("*.md")):
 # --- 8. Wiring table vs sketch ------------------------------------------
 # Parse the wiring table in docs/wiring.md and compare every signal
 # and power connection against the sketch defines and the frozen rules.
+import os
 import shutil
-import subprocess
 import tempfile
 
 wiring = read("docs/wiring.md")
@@ -192,10 +204,74 @@ for (module, pin), want in POWER.items():
     check(f"wiring {module} {pin} -> {want}",
           hit and want in hit[0], f"found {hit}")
 
-# --- 9. Compile check (PlatformIO, skipped if absent) ---------------------
-pio = shutil.which("pio")
-if not pio:
-    for cand in [Path.home() / ".local/bin/pio",
+# --- 9. Sketch rules (AGENTS.md) ----------------------------------------
+BAD_PINS = {2, 8, 9, 21, 22, 25, 26, 27, 34}
+SUPERMINI_PINS = set(range(0, 11)) | {20, 21}
+pin_defs = {n: int(v) for n, v in defines.items()
+            if re.search(r"(_PIN|^OLED_|^ENC_)", n)}
+bad = {n: v for n, v in pin_defs.items()
+       if v in BAD_PINS or v not in SUPERMINI_PINS}
+check("sketch pin defines avoid strapping/classic pins and fit SuperMini",
+      bool(pin_defs) and not bad, f"bad {bad}" if bad else "no pin defines")
+check("pot pin is ADC1 (GPIO 0-4)", 0 <= pin_defs.get("POT_PIN", -1) <= 4,
+      f"POT_PIN={pin_defs.get('POT_PIN')}")
+check("no blocking getLocalTime(&t) (use getLocalTime(&t, 0))",
+      not re.search(r"getLocalTime\(\s*&\w+\s*\)", sketch))
+loop_src = sketch[sketch.find("void loop()"):]
+long_delays = [int(n) for n in re.findall(r"delay\((\d+)\)", loop_src)
+               if int(n) > 10]
+check("no delay() > 10 ms inside loop()",
+      "void loop()" in sketch and not long_delays, f"found {long_delays}")
+
+# --- 10. Doc wording and navigation ---------------------------------------
+PRICE_RE = re.compile(r"\$\s?\d|price|cheap", re.IGNORECASE)
+for md in sorted((ROOT / "docs").glob("*.md")) + [ROOT / "README.md"]:
+    hits = PRICE_RE.findall(md.read_text(encoding="utf-8"))
+    check(f"no price/cost wording in {md.relative_to(ROOT)}", not hits,
+          f"found {hits[:5]}")
+for md in sorted((ROOT / "docs").glob("*.md")):
+    tail = md.read_text(encoding="utf-8").rstrip().splitlines()[-1:]
+    check(f"nav line with [Contents](../README.md) in {md.relative_to(ROOT)}",
+          bool(tail) and "[Contents](../README.md)" in tail[0])
+
+# --- 11. Secrets and line endings -----------------------------------------
+tracked = subprocess.run(["git", "ls-files", "--eol"], cwd=ROOT,
+                         capture_output=True, text=True).stdout.splitlines()
+SECRET_RE = re.compile(
+    r'(?i)(password|passwd|psk)\s*=\s*"(?!YOUR_)[^"]+"'
+    r'|#define\s+WIFI_(SSID|PASSWORD)\s+"(?!YOUR_)[^"]*[^"\s][^"]*"')
+secret_hits, crlf_files = [], []
+for row in tracked:
+    meta, _, rel = row.partition("	")
+    index_eol = meta.split()[0]
+    if index_eol == "i/-text":
+        continue
+    if index_eol in ("i/crlf", "i/mixed"):
+        crlf_files.append(rel)
+    if rel == "scripts/check.py":
+        continue
+    text = (ROOT / rel).read_text(encoding="utf-8", errors="replace")
+    if SECRET_RE.search(text):
+        secret_hits.append(rel)
+check("no credential assignments other than YOUR_ placeholders",
+      not secret_hits, f"in {secret_hits}")
+check("tracked text files use LF line endings (index)", not crlf_files,
+      f"CRLF in {crlf_files}")
+
+# --- 12. Compile check (PlatformIO, skipped if absent or --quick) --------
+PINNED_LIBS = [
+    ("adafruit/Adafruit-GFX-Library", "1.13.0"),
+    ("adafruit/Adafruit_BusIO", "1.17.4"),
+    ("adafruit/Adafruit_SSD1306", "2.5.17"),
+    ("adafruit/Adafruit_Sensor", "1.1.15"),
+    ("adafruit/DHT-sensor-library", "1.4.7"),
+    ("bblanchon/ArduinoJson", "v7.4.3"),
+]
+pio = None if QUICK else shutil.which("pio")
+if not pio and not QUICK:
+    for cand in [Path.home() / ".platformio/penv/Scripts/pio.exe",
+                 Path.home() / ".platformio/penv/bin/pio",
+                 Path.home() / ".local/bin/pio",
                  Path.home() / "workspace/.pio-venv/bin/pio"]:
         if cand.exists():
             pio = str(cand)
@@ -205,31 +281,44 @@ if pio:
         td = Path(td)
         (td / "platformio.ini").write_text(
             "[env:esp32-c3-devkitm-1]\n"
-            "platform = espressif32\n"
+            "platform = espressif32@6.9.0\n"
             "board = esp32-c3-devkitm-1\n"
             "framework = arduino\n"
-            "lib_deps =\n"
-            "    adafruit/Adafruit GFX Library\n"
-            "    adafruit/Adafruit SSD1306\n"
-            "    adafruit/DHT sensor library\n"
-            "    bblanchon/ArduinoJson\n"
             "build_flags =\n"
-            "    -DUSB_CDC_ON_BOOT=1\n")
+            "    -DARDUINO_USB_CDC_ON_BOOT=1\n"
+            "    -DARDUINO_USB_MODE=1\n")
+        # Cloned into lib/ rather than lib_deps: PlatformIO resolves lib_deps
+        # dependencies through its registry, which some networks block.
+        clone_failed = False
+        for repo, tag in PINNED_LIBS:
+            clone = subprocess.run(
+                ["git", "clone", "-q", "--depth", "1", "--branch", tag,
+                 f"https://github.com/{repo}.git",
+                 str(td / "lib" / repo.split("/")[1])],
+                capture_output=True, text=True, timeout=300)
+            if clone.returncode != 0:
+                clone_failed = True
+                check(f"git clone {repo}@{tag}", False, clone.stderr.strip())
         src = td / "src"
         src.mkdir()
         (src / "main.cpp").write_text(
             "#include <Arduino.h>\n" + read("firmware/desk_gadget.ino"))
-        env = dict(__import__("os").environ)
+        env = dict(os.environ)
         core_dir = Path.home() / "workspace/.platformio"
         if core_dir.exists():
             env["PLATFORMIO_CORE_DIR"] = str(core_dir)
-        proc = subprocess.run([pio, "run", "-e", "esp32-c3-devkitm-1"],
-                              cwd=td, capture_output=True, text=True,
-                              env=env, timeout=900)
-        check("sketch compiles for esp32-c3-devkitm-1 (PlatformIO)",
-              proc.returncode == 0 and
-              (td / ".pio/build/esp32-c3-devkitm-1/firmware.bin").exists(),
-              (proc.stdout + proc.stderr)[-500:] if proc.returncode else "")
+        if clone_failed:
+            print("[skip] compile — a library clone failed (see FAIL above)")
+        else:
+            proc = subprocess.run([pio, "run", "-e", "esp32-c3-devkitm-1"],
+                                  cwd=td, capture_output=True, text=True,
+                                  env=env, timeout=900)
+            check("sketch compiles for esp32-c3-devkitm-1 (PlatformIO)",
+                  proc.returncode == 0 and
+                  (td / ".pio/build/esp32-c3-devkitm-1/firmware.bin").exists(),
+                  (proc.stdout + proc.stderr)[-1500:] if proc.returncode else "")
+elif QUICK:
+    print("[skip] compile check — --quick")
 else:
     print("[skip] compile check — PlatformIO (pio) not found; "
           "install it and re-run to include the compile check")
