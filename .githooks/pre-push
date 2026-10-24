@@ -1,0 +1,21 @@
+#!/bin/sh
+# Full checks before every push; refuses pushes to main/master.
+# Enable once with:  git config core.hooksPath .githooks
+while read -r local_ref local_sha remote_ref remote_sha; do
+  case "$remote_ref" in
+    refs/heads/main|refs/heads/master)
+      echo "pre-push: refusing to push to $remote_ref. Push a feature branch and open a pull request." >&2
+      exit 1 ;;
+  esac
+done
+root=$(git rev-parse --show-toplevel) || exit 1
+cd "$root" || exit 1
+PY=
+for c in python3 python; do
+  if "$c" -c "import sys" >/dev/null 2>&1; then PY=$c; break; fi
+done
+if [ -z "$PY" ]; then echo "pre-push: no working python3/python on PATH" >&2; exit 1; fi
+if ! "$PY" scripts/check.py; then
+  echo "pre-push: checks failed; push blocked. Fix them (do not use --no-verify)." >&2
+  exit 1
+fi

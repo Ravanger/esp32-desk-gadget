@@ -1,8 +1,9 @@
 // ============================================================
 // ESP32 Desk Gadget — clock + indoor DHT11 + outdoor weather
-// Board: ESP32-C3 SuperMini (select "ESP32C3 Dev Module" in the IDE,
-// and enable Tools > USB CDC On Boot so Serial output shows over
-// the SuperMini's native USB-C connection).
+// Board: ESP32-C3 SuperMini. Arduino IDE: "ESP32C3 Dev Module" with
+// Tools > USB CDC On Boot: Enabled so Serial shows over the native USB-C
+// connection (compile-verified on arduino-esp32 2.0.17). "Nologo ESP32C3
+// Super Mini" (core 3.x, CDC on by default) is untested with this sketch.
 // OLED SSD1306 128x64 I2C (0x3C) | encoder pages | pot dimming
 // Weather: Open-Meteo (no API key). Time: NTP, configurable zone.
 // See README.md and docs/ in this repo for wiring and build order.
@@ -16,6 +17,7 @@
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
 #include <DHT.h>
+#include <WiFiClientSecure.h>
 #include "time.h"
 
 // ---------- Configuration: edit these before uploading ----------
@@ -32,6 +34,7 @@ const char* LOCATION_NAME = "TORONTO";
 // Local clock time: POSIX time-zone string for the location above
 // (Eastern Time example). See docs/libraries-and-setup.md.
 const char* TIMEZONE_POSIX = "EST5EDT,M3.2.0,M11.1.0";
+#define WIFI_LOW_TX_POWER 0  // set to 1 if the board fails to join WiFi (common SuperMini antenna issue)
 
 // ---------- Pins, ESP32-C3 SuperMini (see docs/wiring.md) ----------
 #define OLED_SDA 4   // I2C via GPIO matrix; NOT GPIO 8 (strapping + onboard LED)
@@ -67,8 +70,14 @@ float outTemp = NAN, outHum = NAN, outWind = NAN;
 int outCode = -1;
 bool weatherOK = false;
 int contrast = 200;  // current OLED contrast 0-255
-unsigned long lastDHT = 0, lastWeather = 0, lastDraw = 0;
+unsigned long lastDHT = 0, lastDraw = 0, lastPot = 0;
+unsigned long lastWeatherTry = 0, lastWeatherOk = 0, lastStep = 0;
 unsigned long lastBtn = 0, bootMs = 0;
+bool weatherTried = false, lastFetchOk = false;
+const time_t MIN_VALID_EPOCH = 1700000000;  // time(nullptr) below this means NTP has not synced
+#if USE_PIR
+unsigned long lastMotion = 0;
+#endif
 int lastCLK;
 int lastSw = HIGH;  // previous encoder-button state, for edge detection
 
@@ -115,19 +124,32 @@ void setContrast(int v) {
 }
 
 // ---------- Weather fetch (MakerGuides pattern, Open-Meteo data) ----------
-void fetchWeather() {
-  if (WiFi.status() != WL_CONNECTED) return;
+bool fetchWeather() {
+  if (WiFi.status() != WL_CONNECTED) return false;
+  bool ok = false;
+  WiFiClientSecure client;
+  client.setInsecure();  // TLS encrypts but does not verify the server certificate
+  client.setHandshakeTimeout(4);  // seconds; the core default is 120 s
   HTTPClient http;
-  http.begin(weatherUrl());
+  http.setConnectTimeout(4000);
+  http.setTimeout(4000);
+  http.begin(client, weatherUrl());
   int code = http.GET();
   if (code == 200) {
     JsonDocument doc;  // ArduinoJson v7
     if (!deserializeJson(doc, http.getString())) {
-      outTemp = doc["current"]["temperature_2m"];
-      outHum = doc["current"]["relative_humidity_2m"];
-      outWind = doc["current"]["wind_speed_10m"];
-      outCode = doc["current"]["weather_code"];
-      weatherOK = true;
+      JsonObject cur = doc["current"];
+      if (cur["temperature_2m"].is<float>() && cur["weather_code"].is<int>()) {
+        outTemp = cur["temperature_2m"];
+        outHum = cur["relative_humidity_2m"] | NAN;
+        outWind = cur["wind_speed_10m"] | NAN;
+        outCode = cur["weather_code"];
+        weatherOK = true;
+        lastWeatherOk = millis();
+        ok = true;
+      } else {
+        Serial.println("Weather: missing fields");
+      }
     } else {
       Serial.println("Weather: JSON parse failed");
     }
@@ -135,6 +157,7 @@ void fetchWeather() {
     Serial.printf("Weather: HTTP %d\n", code);
   }
   http.end();
+  return ok;
 }
 
 // ---------- Page drawing ----------
@@ -148,13 +171,15 @@ void header(const char* title) {
 
 void drawPage() {
   struct tm t;
-  bool haveTime = getLocalTime(&t);
+  time_t nowSec = time(nullptr);
+  localtime_r(&nowSec, &t);
+  bool haveTime = nowSec > MIN_VALID_EPOCH;
   display.clearDisplay();
   if (page == 0) {
     // ---- CLOCK ----
     header("CLOCK");
     display.setTextSize(3);
-    display.setCursor(16, 20);
+    display.setCursor(10, 20);
     if (haveTime) {
       display.printf("%02d:%02d", t.tm_hour, t.tm_min);
     } else {
@@ -193,28 +218,44 @@ void drawPage() {
     if (!weatherOK) {
       display.print("Waiting for first fetch...");
     } else {
-      display.printf("%.1f C  %.0f %% RH\n\n", outTemp, outHum);
-      display.printf("%s\n\n", codeText(outCode));
-      display.printf("Wind %.0f km/h", outWind);
+      display.printf("%.1f C", outTemp);
+      if (!isnan(outHum)) display.printf("  %.0f %% RH", outHum);
+      display.setCursor(0, 28);
+      display.setTextWrap(true);
+      display.print(codeText(outCode));
+      display.setTextWrap(false);
+      display.setCursor(0, 46);
+      if (isnan(outWind)) display.print("Wind --");
+      else display.printf("Wind %.0f km/h", outWind);
+      display.setCursor(0, 54);
+      display.printf("Updated %lu min ago", (millis() - lastWeatherOk) / 60000UL);
     }
   } else {
     // ---- SUMMARY / SETTINGS ----
     header("SUMMARY");
     display.setTextSize(1);
-    display.setCursor(0, 15);
-    if (haveTime) display.printf("Time %02d:%02d\n", t.tm_hour, t.tm_min);
+    display.setCursor(0, 13);
+    if (haveTime) display.printf("Time %02d:%02d", t.tm_hour, t.tm_min);
+    else display.print("Time --:--");
+    display.setCursor(0, 21);
     if (isnan(inTemp) || isnan(inHum)) {
-      display.print("In --\n");
+      display.print("In --");
     } else {
-      display.printf("In %.1f C  %.0f %%\n", inTemp, inHum);
+      display.printf("In %.1f C  %.0f %%", inTemp, inHum);
     }
-    if (weatherOK) display.printf("Out %.1f C  %s\n", outTemp, codeText(outCode));
-    display.printf("Bright %d / 255\n", contrast);
-    display.printf("WiFi %s\n", WiFi.status() == WL_CONNECTED ? "connected" : "DOWN");
+    display.setCursor(0, 29);
+    if (!weatherOK) display.print("Out --");
+    else if (isnan(outHum)) display.printf("Out %.1f C", outTemp);
+    else display.printf("Out %.1f C  %.0f %%", outTemp, outHum);
+    display.setCursor(0, 37);
+    display.printf("Bright %d / 255", contrast);
+    display.setCursor(0, 45);
+    display.printf("WiFi %s", WiFi.status() == WL_CONNECTED ? "connected" : "DOWN");
+    display.setCursor(0, 53);
     display.printf("Up %lu min", (millis() - bootMs) / 60000UL);
   }
   // page dots
-  for (int i = 0; i < 4; i++) {
+  for (int i = 0; i < 4; ++i) {
     display.fillRect(52 + i * 8, 61, 5, 2, i == page ? WHITE : BLACK);
   }
   display.display();
@@ -225,10 +266,20 @@ void setup() {
   Serial.begin(115200);
   bootMs = millis();
   Wire.begin(OLED_SDA, OLED_SCL);
-  if (!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) {
-    Serial.println("OLED not found at 0x3C - check wiring/address");
-    while (true) delay(1000);
+  Wire.beginTransmission(0x3C);
+  if (Wire.endTransmission() != 0) {
+    while (true) {
+      Serial.println("OLED not found at 0x3C - check wiring/address");
+      delay(2000);
+    }
   }
+  if (!display.begin(SSD1306_SWITCHCAPVCC, 0x3C, true, false)) {  // false: keep Wire on GPIO 4/5
+    while (true) {
+      Serial.println("OLED init failed (out of memory)");
+      delay(2000);
+    }
+  }
+  display.setTextWrap(false);
   display.clearDisplay();
   display.display();
   setContrast(contrast);
@@ -238,15 +289,11 @@ void setup() {
   pinMode(ENC_SW, INPUT_PULLUP);
   lastCLK = digitalRead(ENC_CLK);
 #if USE_PIR
-  pinMode(PIR_PIN, INPUT);
+  pinMode(PIR_PIN, INPUT_PULLDOWN);
 #endif
-  // WiFi, then NTP with the configured time-zone rules.
-  // WiFi is NOT waited on forever: after a 30 s timeout the gadget
-  // continues anyway, so a WiFi failure is a clock showing --:--
-  // (NTP not yet synced) plus "WiFi DOWN" on the Summary page, not a
-  // blank screen with no Serial output. NTP (via configTzTime) and
-  // the 10-minute weather fetch keep working in the background, so
-  // both recover on their own when WiFi comes up.
+  // WiFi (30 s timeout, then continue), then NTP. The clock never blocks;
+  // loop() starts the weather fetch as soon as WiFi is up (no NTP wait)
+  // and retries every 60 s until it succeeds.
   display.clearDisplay();
   display.setTextSize(1);
   display.setCursor(0, 0);
@@ -255,6 +302,9 @@ void setup() {
   Serial.println("WiFi: connecting...");
   WiFi.mode(WIFI_STA);
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+#if WIFI_LOW_TX_POWER
+  WiFi.setTxPower(WIFI_POWER_8_5dBm);
+#endif
   unsigned long wifiStart = millis();
   while (WiFi.status() != WL_CONNECTED &&
          millis() - wifiStart < 30000UL) {
@@ -266,8 +316,6 @@ void setup() {
     Serial.println("WiFi: connection failed (30 s timeout) - continuing without WiFi");
   }
   configTzTime(TIMEZONE_POSIX, "pool.ntp.org", "time.nist.gov");
-  if (WiFi.status() == WL_CONNECTED) fetchWeather();
-  lastWeather = millis();
   drawPage();
 }
 
@@ -277,12 +325,16 @@ void loop() {
 
   // --- Encoder rotation (polling: watch CLK, read DT for direction) ---
   int clk = digitalRead(ENC_CLK);
-  if (clk != lastCLK && clk == LOW) {  // CLK falling edge = one detent
+  if (clk != lastCLK && clk == LOW && now - lastStep >= 3) {  // CLK falling edge = one detent; 3 ms bounce guard
+    lastStep = now;
     if (digitalRead(ENC_DT) != clk) {
       page = (page + 1) % 4;  // clockwise
     } else {
       page = (page + 3) % 4;  // counter-clockwise
     }
+#if USE_PIR
+    lastMotion = now;
+#endif
     drawPage();
   }
   lastCLK = clk;
@@ -295,19 +347,26 @@ void loop() {
   if (sw == LOW && lastSw == HIGH && now - lastBtn > 200) {
     lastBtn = now;
     page = (page == 3) ? 0 : 3;
+#if USE_PIR
+    lastMotion = now;
+#endif
     drawPage();
   }
   lastSw = sw;
 
   // --- Pot -> contrast (only touch the register when it changes) ---
-  int target = map(analogRead(POT_PIN), 0, 4095, 8, 255);
-  if (abs(target - contrast) > 4) {
-    contrast = target;
-    setContrast(contrast);
+  if (now - lastPot >= 50) {
+    lastPot = now;
+    int mv = constrain((int)analogReadMilliVolts(POT_PIN), 0, 2500);  // C3 ADC tops out at ~2.5 V
+    int target = map(mv, 0, 2500, 8, 255);
+    if (abs(target - contrast) > 4) {
+      contrast = target;
+      setContrast(contrast);
+    }
   }
 
-  // --- DHT11 every 2 s; keep last good values on a failed read ---
-  if (now - lastDHT >= 2000) {
+  // --- DHT11 every 2.5 s; keep last good values on a failed read ---
+  if (now - lastDHT >= 2500) {
     lastDHT = now;
     float h = dht.readHumidity();
     float t = dht.readTemperature();
@@ -317,15 +376,16 @@ void loop() {
     }
   }
 
-  // --- Weather every 10 minutes (not continuously!) ---
-  if (now - lastWeather >= 600000UL) {
-    lastWeather = now;
-    fetchWeather();
+  // --- Weather: once WiFi is up; every 10 min after success, 60 s after a failure ---
+  if (WiFi.status() == WL_CONNECTED &&
+      (!weatherTried || now - lastWeatherTry >= (lastFetchOk ? 600000UL : 60000UL))) {
+    weatherTried = true;
+    lastWeatherTry = now;
+    lastFetchOk = fetchWeather();
   }
 
 #if USE_PIR
   // --- PIR: blank the panel 60 s after the room goes quiet ---
-  static unsigned long lastMotion = 0;
   if (digitalRead(PIR_PIN) == HIGH) lastMotion = now;
   bool awake = (now - lastMotion < 60000UL);
   static bool wasAwake = true;
@@ -338,6 +398,11 @@ void loop() {
   // --- Redraw once a second (the clock's seconds need it) ---
   if (now - lastDraw >= 1000) {
     lastDraw = now;
-    drawPage();
+#if USE_PIR
+    if (awake)
+#endif
+      drawPage();
   }
+
+  delay(1);  // yield so IDLE/WiFi tasks run on the single-core C3
 }

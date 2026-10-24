@@ -1,0 +1,19 @@
+#!/bin/sh
+# Quick guardrail checks before every commit. Enable once with:
+#   git config core.hooksPath .githooks
+case "$(git symbolic-ref --short -q HEAD)" in
+  main|master)
+    echo "pre-commit: refusing to commit on main/master. Create a feature branch and open a pull request." >&2
+    exit 1 ;;
+esac
+root=$(git rev-parse --show-toplevel) || exit 1
+cd "$root" || exit 1
+PY=
+for c in python3 python; do
+  if "$c" -c "import sys" >/dev/null 2>&1; then PY=$c; break; fi
+done
+if [ -z "$PY" ]; then echo "pre-commit: no working python3/python on PATH" >&2; exit 1; fi
+if ! "$PY" scripts/check.py --quick; then
+  echo "pre-commit: checks failed; commit blocked. Fix them (do not use --no-verify)." >&2
+  exit 1
+fi
