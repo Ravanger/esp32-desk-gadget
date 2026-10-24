@@ -11,11 +11,15 @@ wiring is only ~15 jumpers, so this goes fast.
 
 1. **OLED only.** Wire just the display (4 wires: SDA GPIO 4, SCL
    GPIO 5, [wiring.md](wiring.md)) and upload the full sketch; it works
-   for bring-up with nothing else connected. With wrong or missing
+   for bring-up with nothing else connected. This deliberately replaces
+   the earlier minimal-test-sketch approach: the full sketch now gives up
+   on WiFi after 30 s, so it runs with only the board connected. With wrong or missing
    WiFi settings the OLED shows "Connecting WiFi..." for up to 30 s,
    then the clock page with `--:--`. Until the pot is wired, GPIO 1
    floats and the brightness may wander; tie GPIO 1 to 3V3 (reads full
-   scale = full brightness) until stage 5 if that bothers you. (If Serial shows nothing at all, check
+   scale = full brightness) until stage 5 if that bothers you. Remove
+   that tie wire at stage 5 before fitting the pot, or the wiper is
+   shorted to 3V3 and the pot does nothing. (If Serial shows nothing at all, check
    USB CDC On Boot is enabled — see
    [libraries-and-setup.md](libraries-and-setup.md).)
    - **Test:** text on the OLED, and Serial Monitor (115200 baud) shows
@@ -63,7 +67,8 @@ wiring is only ~15 jumpers, so this goes fast.
      every 60 s after a failure) and the numbers match the browser's
      JSON. Serial Monitor prints the HTTP code if the fetch fails.
 5. **Add the potentiometer.** Power down, wire the pot (ends to
-   3V3/GND, wiper to GPIO 1), power up.
+   3V3/GND, wiper to GPIO 1), power up. If you tied GPIO 1 to 3V3
+   earlier, remove that wire first.
    - **Test:** turning the pot sweeps the OLED from dim to full
      brightness, smoothly, on every page. The Summary page's "Bright"
      value should track it from about 8 to about 255; the top

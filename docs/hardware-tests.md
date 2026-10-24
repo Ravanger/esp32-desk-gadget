@@ -8,7 +8,7 @@ recorded measurement is not passed.
 
 All voltages are measured with the board powered over USB-C and a
 multimeter, black lead on a SuperMini GND pin. All pins are
-SuperMini GPIOs. Power off before changing any wiring.
+SuperMini GPIOs. Power off before changing any wiring (the one exception is the DHT11 data-wire test in stage 3).
 
 ## Stage 0 — Unpowered checks
 
@@ -73,6 +73,9 @@ because those stages need you to rotate to their pages.
       there is no last value, so it shows "No reading".) Reconnect
       it: readings resume within a few seconds (the sketch reads
       every 2.5 seconds; the DHT11 maximum rate is 1 Hz).
+      This is the one live change allowed: pulling only the DATA jumper
+      (never VCC or GND) and plugging it back in is safe because it is a
+      3.3 V signal line.
 
 ## Stage 4 — Outdoor (Open-Meteo)
 

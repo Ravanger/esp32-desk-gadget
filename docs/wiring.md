@@ -48,7 +48,7 @@ double-check every connection against the table, then plug in USB-C.
 
 On the ESP32-C3, I2C is **not** fixed to specific pins at chip level —
 it runs through the GPIO matrix, so the sketch must say which pins to
-use, and it does: `Wire.begin(4, 5)`.
+use, and it does: `Wire.begin(OLED_SDA, OLED_SCL)`, with those defines set to 4 and 5.
 
 Do **not** use the pins many online guides call the "default" I2C
 pins, GPIO 8 / GPIO 9:
@@ -65,7 +65,7 @@ build. GPIO 20 / 21 (the UART0 RX/TX pins) are left free; Serial runs
 over the native USB port.
 
 If your OLED stays black, check in this order: SDA/SCL are on GPIO 4/5
-(not 8/9, and not classic-ESP32 pins such as 21/22), the sketch's `Wire.begin(4, 5)` matches, the I2C
+(not 8/9, and not classic-ESP32 pins such as 21/22), the sketch's `OLED_SDA`/`OLED_SCL` defines are 4/5, the I2C
 address is 0x3C (a few modules are 0x3D), and VCC is on 3V3, not 5V.
 SuperMini board variants differ slightly (standard boards have a
 simple blue LED on GPIO 8; "Plus" variants have a WS2812 RGB LED on

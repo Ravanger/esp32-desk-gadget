@@ -122,8 +122,10 @@ makes the parsing code obvious.
 The one quirk: Open-Meteo does not send a text description, it sends
 a numeric weather code. Open-Meteo uses a subset of WMO codes (not the
 full 00–99 present-weather set), and the sketch translates each of the
-29 codes to its own label (Open-Meteo's table; 96 and 99 are shortened
-to fit the screen):
+29 codes to its own label (Open-Meteo's table; 96 and 99 use shorter
+labels than Open-Meteo's combined "Thunderstorm with slight and heavy hail";
+long labels wrap onto a second line on the Outdoor page, and the Summary
+page shows outdoor temperature and humidity only):
 
 | Code | Meaning |
 | ---- | ------- |

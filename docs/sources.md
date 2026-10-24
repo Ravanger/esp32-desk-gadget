@@ -51,7 +51,7 @@ resolution used in this project is noted.
     (including the warning against GPIO 8/9 for I2C):
     <https://lastminuteengineers.com/esp32-c3-super-mini-pinout-reference/>
   - Mischianti — ESP32-C3 SuperMini Plus pinout (recommends
-    `Wire.begin(4, 5)`, USB CDC On Boot for Serial):
+    `Wire.begin(OLED_SDA, OLED_SCL)`, USB CDC On Boot for Serial):
     <https://mischianti.org/esp32-c3-supermini-plus-v2-high-resolution-pinout-datasheet-and-specs/>
   - WiFi TX-power workaround (community reports, not Espressif;
     call `WiFi.setTxPower()` after `WiFi.begin()`):

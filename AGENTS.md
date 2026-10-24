@@ -103,7 +103,7 @@ conflicts with a general instruction, this file wins for this repo.
 There is no hosted CI (private repo, GitHub Actions is metered), and
 no server-side branch protection (GitHub Free private repos cannot
 enable rulesets or protected branches). The hooks below are the only
-enforcement, so they must be enabled in every clone.
+enforcement, so they must be enabled in every clone. They are a local convenience, not a guarantee: they do not run for pushes made through the GitHub web UI or contents API, or in clones without `core.hooksPath` set.
 
 - One-time setup: `git config core.hooksPath .githooks`
 - pre-commit refuses commits on `main`/`master`, then runs

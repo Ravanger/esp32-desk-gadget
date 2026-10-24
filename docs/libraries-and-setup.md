@@ -7,10 +7,13 @@ Arduino-framework ESP32 either way.
 ## Arduino IDE
 
 1. Install the ESP32 board package (Boards Manager → "esp32 by
-   Espressif") and select **"Nologo ESP32C3 Super Mini"** (arduino-esp32
-   3.x; USB CDC On Boot is enabled by default for it). Alternatively
-   select **"ESP32C3 Dev Module"** and set **Tools → USB CDC On Boot:
-   Enabled** (its default is Disabled).
+   Espressif") and select **"ESP32C3 Dev Module"**, then set **Tools →
+   USB CDC On Boot: Enabled** (its default is Disabled). This matches the
+   configuration compile-verified under PlatformIO (arduino-esp32
+   2.0.17, board esp32-c3-devkitm-1). The board
+   **"Nologo ESP32C3 Super Mini"** exists in arduino-esp32 3.x, where
+   USB CDC On Boot is enabled by default; it is not yet
+   compile-verified with this sketch.
 2. The SuperMini's USB-C is native USB, not a separate serial chip —
    without USB CDC On Boot, Serial Monitor output will not show.
 3. Install these from the Library Manager:
@@ -23,7 +26,7 @@ Arduino-framework ESP32 either way.
 | ArduinoJson (v7 or newer) | Parsing the Open-Meteo JSON response |
 
 Compile-verified on arduino-esp32 2.0.17 (PlatformIO) only, 2026-10-24;
-core 3.x not yet compile-verified (the latest stable is 3.3.12).
+core 3.x not yet compile-verified (latest stable 3.3.12 as checked 2026-10-24).
 Versions used: ArduinoJson 7.4.3, Adafruit SSD1306 2.5.17, Adafruit GFX
 1.13.0, DHT sensor library 1.4.7, Adafruit Unified Sensor 1.1.15.
 
@@ -50,6 +53,7 @@ build_flags =
     -DARDUINO_USB_MODE=1
 lib_deps =
     adafruit/Adafruit GFX Library@1.13.0
+    adafruit/Adafruit BusIO@1.17.4
     adafruit/Adafruit SSD1306@2.5.17
     adafruit/DHT sensor library@1.4.7
     adafruit/Adafruit Unified Sensor@1.1.15
@@ -90,7 +94,9 @@ All configuration is in one block at the top of the sketch:
    the board fails to join WiFi or drops out; the sketch then calls
    `WiFi.setTxPower()` at 8.5 dBm after `WiFi.begin()`. This is a
    community-reported SuperMini workaround, not an Espressif
-   recommendation.
+   recommendation. It lowers radiated power, not a guaranteed fix for an
+   undersized regulator: Espressif does not publish the TX current at
+   8.5 dBm, so measure with a USB meter.
 
 The values shipped in the sketch are an example configuration; replace
 them with the target location before use. Nothing else in the sketch

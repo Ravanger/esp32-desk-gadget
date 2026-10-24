@@ -1,9 +1,9 @@
 // ============================================================
 // ESP32 Desk Gadget — clock + indoor DHT11 + outdoor weather
-// Board: ESP32-C3 SuperMini. Arduino IDE: "Nologo ESP32C3 Super Mini"
-// (arduino-esp32 3.x; USB CDC On Boot is enabled by default), or
-// "ESP32C3 Dev Module" with Tools > USB CDC On Boot: Enabled so Serial
-// shows over the native USB-C connection.
+// Board: ESP32-C3 SuperMini. Arduino IDE: "ESP32C3 Dev Module" with
+// Tools > USB CDC On Boot: Enabled so Serial shows over the native USB-C
+// connection (compile-verified on arduino-esp32 2.0.17). "Nologo ESP32C3
+// Super Mini" (core 3.x, CDC on by default) is untested with this sketch.
 // OLED SSD1306 128x64 I2C (0x3C) | encoder pages | pot dimming
 // Weather: Open-Meteo (no API key). Time: NTP, configurable zone.
 // See README.md and docs/ in this repo for wiring and build order.
@@ -244,8 +244,9 @@ void drawPage() {
       display.printf("In %.1f C  %.0f %%", inTemp, inHum);
     }
     display.setCursor(0, 29);
-    if (weatherOK) display.printf("Out %.1f C  %s", outTemp, codeText(outCode));
-    else display.print("Out --");
+    if (!weatherOK) display.print("Out --");
+    else if (isnan(outHum)) display.printf("Out %.1f C", outTemp);
+    else display.printf("Out %.1f C  %.0f %%", outTemp, outHum);
     display.setCursor(0, 37);
     display.printf("Bright %d / 255", contrast);
     display.setCursor(0, 45);
@@ -291,8 +292,8 @@ void setup() {
   pinMode(PIR_PIN, INPUT_PULLDOWN);
 #endif
   // WiFi (30 s timeout, then continue), then NTP. The clock never blocks;
-  // loop() starts the weather fetch once WiFi and NTP are both up and
-  // retries every 60 s until it succeeds.
+  // loop() starts the weather fetch as soon as WiFi is up (no NTP wait)
+  // and retries every 60 s until it succeeds.
   display.clearDisplay();
   display.setTextSize(1);
   display.setCursor(0, 0);

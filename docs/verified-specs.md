@@ -80,9 +80,10 @@ here too.
   Source: ESPboards ESP32-C3 Super Mini pinout; Mischianti SuperMini pinout;
   datasheet v2.4. Checked 2026-10-24.
 - Native USB-C, no USB-serial chip. For `Serial` over USB, use board
-  "Nologo ESP32C3 Super Mini" (arduino-esp32 3.x; USB CDC On Boot is enabled
-  by default in `boards.txt`) or "ESP32C3 Dev Module" with Tools > USB CDC On
-  Boot > Enabled (default Disabled). PlatformIO board `esp32-c3-devkitm-1`
+  "ESP32C3 Dev Module" with Tools > USB CDC On Boot > Enabled (default
+  Disabled; the verified path), or "Nologo ESP32C3 Super Mini" (arduino-esp32
+  3.x; USB CDC On Boot is enabled by default in `boards.txt`; not yet
+  compile-verified with this sketch). PlatformIO board `esp32-c3-devkitm-1`
   with `-DARDUINO_USB_CDC_ON_BOOT=1 -DARDUINO_USB_MODE=1`.
   Source: arduino-esp32 `boards.txt`. Checked 2026-10-24.
 - 3.3 V regulator rating varies by clone. Random Nerd Tutorials quotes
@@ -278,8 +279,10 @@ here too.
   the sketch clock uses `TIMEZONE_POSIX`.
   Source: Open-Meteo documentation. Checked 2026-10-23.
 - WMO weather codes: the sketch's `codeText()` covers exactly the 29 codes
-  Open-Meteo reports, each with its own label (labels for 96 and 99 are
-  shortened to fit the screen). Codes not in the Open-Meteo list -
+  Open-Meteo reports, each with its own label (96 and 99 use shorter
+  labels than Open-Meteo's combined "Thunderstorm with slight and heavy hail";
+  long labels wrap onto a second line on the Outdoor page, and the Summary
+  page shows outdoor temperature and humidity only). Codes not in the Open-Meteo list -
   including 98 (thunderstorm with dust/sandstorm in the full WMO 00-99
   set) - are not returned by Open-Meteo; the sketch's default `-`
   fallback covers any unexpected value.
@@ -342,9 +345,12 @@ Adafruit GFX 1.13.0, DHT sensor library 1.4.7 (+ Adafruit Unified Sensor).
 Result, 2026-10-24: SUCCESS with no sketch warnings under `-Wall` (PlatformIO platform
 espressif32 6.9.0 = arduino-esp32 2.0.17, board `esp32-c3-devkitm-1`, the
 pinned library versions above): RAM 12.4% (40,508 / 327,680 bytes), Flash
-71.6% (938,752 / 1,310,720 bytes). The default configuration and
-`USE_PIR=1` with `WIFI_LOW_TX_POWER=1` both compile. The latest stable arduino-esp32 is
-3.3.12 (2026-09-18); core 3.x is not compile-verified here.
+about 938 KB (71.6% of 1,310,720 bytes; the exact figure varies by a few
+hundred bytes with library resolution). The default configuration compiles.
+`USE_PIR=1` with `WIFI_LOW_TX_POWER=1` was compile-verified manually on
+2026-10-24 (scripts/check.py compiles the default configuration only).
+Latest stable arduino-esp32 as checked 2026-10-24: 3.3.12 (released
+2026-09-18); core 3.x is not compile-verified here.
 
 ## What this audit could NOT verify
 
