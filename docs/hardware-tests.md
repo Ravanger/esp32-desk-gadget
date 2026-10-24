@@ -37,10 +37,11 @@ SuperMini GPIOs. Power off before changing any wiring (the one exception is the 
       the regulator rating of your board (which varies by clone). Measured idle:
       ______ mA, peak during fetch: ______ mA
 
-## Stage 2 — Clock (NTP) and encoder
+## Stage 2 — Clock (NTP) and encoder (or button)
 
-The encoder is tested here, before the indoor and outdoor stages,
-because those stages need you to rotate to their pages.
+The encoder (or button) is tested here, before the indoor and outdoor stages,
+because those stages need you to rotate (or press, in button
+mode) to their pages.
 
 - [ ] Serial Monitor shows "WiFi: connecting..." then
       "WiFi: connected" on a 2.4 GHz network (the ESP32-C3 has no
@@ -52,10 +53,10 @@ because those stages need you to rotate to their pages.
 - [ ] After a power cycle, the clock resyncs on its own — no
       button press, no re-upload. (It shows `--:--` until the first
       NTP sync and never blocks the display.)
-- [ ] Rotate the encoder: pages change in order Clock → Indoor →
+- [ ] Encoder build: rotate the encoder: pages change in order Clock → Indoor →
       Outdoor → Summary, and back the other way when rotated the
       other way. If it counts backwards, swap CLK/DT (GPIO 6/7).
-- [ ] Press the encoder: the display jumps to the Summary page;
+- [ ] Encoder build: press the encoder: the display jumps to the Summary page;
       press again: back to Clock. A press does not step through
       pages, and holding it down does not re-trigger.
 - [ ] Button-mode build only (`USE_BUTTON_NAV` 1, no encoder): each
@@ -88,8 +89,8 @@ because those stages need you to rotate to their pages.
       (the first fetch runs as soon as WiFi is up, then every 10
       minutes after a success and every 60 s after a failure). A
       failing fetch typically blocks for a few seconds and at worst
-      about 12 s plus DNS lookup time, so encoder input during a
-      fetch is missed. The page shows "Updated N min ago".
+      about 12 s plus DNS lookup time, so encoder or button input during
+      a fetch is missed. The page shows "Updated N min ago".
 - [ ] Temperature, humidity, condition, and wind match Open-Meteo
       for the configured location when the same URL from
       [how-it-works.md](how-it-works.md) is opened in a browser.

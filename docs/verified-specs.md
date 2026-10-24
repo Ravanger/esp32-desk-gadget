@@ -346,9 +346,9 @@ Result, 2026-10-24: SUCCESS with no sketch warnings under `-Wall` (PlatformIO pl
 espressif32 6.9.0 = arduino-esp32 2.0.17, board `esp32-c3-devkitm-1`, the
 pinned library versions above): RAM 12.4% (40,508 / 327,680 bytes), Flash
 about 938 KB (71.6% of 1,310,720 bytes; the exact figure varies by a few
-hundred bytes with library resolution). The default configuration compiles.
-`USE_PIR=1` with `WIFI_LOW_TX_POWER=1`, and `USE_BUTTON_NAV=1`, were
-compile-verified manually on 2026-10-24 (scripts/check.py compiles the default configuration only).
+hundred bytes with library resolution). scripts/check.py compiles two
+configurations: the default, and every option define (`USE_PIR`,
+`USE_BUTTON_NAV`, `WIFI_LOW_TX_POWER`) set to 1; both compile.
 Latest stable arduino-esp32 as checked 2026-10-24: 3.3.12 (released
 2026-09-18); core 3.x is not compile-verified here.
 

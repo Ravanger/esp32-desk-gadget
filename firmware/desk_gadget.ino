@@ -350,7 +350,7 @@ void loop() {
   int sw = digitalRead(ENC_SW);
   bool pressed = false;
   if (sw != lastSw) {
-    // Count a press only if the line was HIGH >= 30 ms, so contact bounce on press or release never re-triggers.
+    // Count a press only if the line was HIGH >= 30 ms, so contact bounce under 30 ms on press or release is ignored.
     pressed = (sw == LOW && now - lastSwChange >= 30);
     lastSwChange = now;
   }

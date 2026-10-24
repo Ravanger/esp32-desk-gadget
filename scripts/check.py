@@ -23,7 +23,8 @@ Checks:
      no blocking getLocalTime(&t), and has no long delay() in loop().
  10. Docs have no price/cost wording and end with a Contents nav line.
  11. No secrets; tracked text files use LF line endings.
- 12. Sketch compiles for esp32-c3-devkitm-1 with PlatformIO
+ 12. Sketch compiles for esp32-c3-devkitm-1 with PlatformIO, both as
+     shipped and with every option define set to 1
      (skipped, not failed, when PlatformIO is not installed or --quick).
 """
 
@@ -313,8 +314,13 @@ if pio:
                 print(f"[skip] git clone {repo}@{tag} failed: {err}")
         src = td / "src"
         src.mkdir()
-        (src / "main.cpp").write_text(
-            "#include <Arduino.h>\n" + read("firmware/desk_gadget.ino"))
+        sketch = read("firmware/desk_gadget.ino")
+        all_on, n_opts = re.subn(
+            r"^(#define (?:USE_PIR|USE_BUTTON_NAV|WIFI_LOW_TX_POWER)) 0\b",
+            r"\1 1", sketch, flags=re.MULTILINE)
+        check("all 3 option defines found for the all-options build",
+              n_opts == 3, f"matched {n_opts}")
+        variants = [("default options", sketch), ("all options = 1", all_on)]
         env = dict(os.environ)
         core_dir = Path.home() / "workspace/.platformio"
         if core_dir.exists():
@@ -323,13 +329,16 @@ if pio:
             print("[skip] compile — a library clone failed (network?); the sketch "
                   "is NOT compile-verified by this run")
         else:
-            proc = subprocess.run([pio, "run", "-e", "esp32-c3-devkitm-1"],
-                                  cwd=td, capture_output=True, text=True,
-                                  env=env, timeout=900)
-            check("sketch compiles for esp32-c3-devkitm-1 (PlatformIO)",
-                  proc.returncode == 0 and
-                  (td / ".pio/build/esp32-c3-devkitm-1/firmware.bin").exists(),
-                  (proc.stdout + proc.stderr)[-1500:] if proc.returncode else "")
+            fw = td / ".pio/build/esp32-c3-devkitm-1/firmware.bin"
+            for label, code in variants:
+                (src / "main.cpp").write_text("#include <Arduino.h>\n" + code)
+                fw.unlink(missing_ok=True)
+                proc = subprocess.run([pio, "run", "-e", "esp32-c3-devkitm-1"],
+                                      cwd=td, capture_output=True, text=True,
+                                      env=env, timeout=900)
+                check(f"sketch compiles for esp32-c3-devkitm-1, {label} (PlatformIO)",
+                      proc.returncode == 0 and fw.exists(),
+                      (proc.stdout + proc.stderr)[-1500:] if proc.returncode else "")
 elif QUICK:
     print("[skip] compile check — --quick")
 else:

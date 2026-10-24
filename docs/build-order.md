@@ -25,13 +25,14 @@ wiring is only ~15 jumpers, so this goes fast.
    - **Test:** text on the OLED, and Serial Monitor (115200 baud) shows
      no "OLED not found at 0x3C" message. Black screen? Jump to
      [troubleshooting.md](troubleshooting.md) before continuing.
-2. **WiFi + clock + encoder.** Fill in the WiFi credentials,
+2. **WiFi + clock + encoder (or button).** Fill in the WiFi credentials,
    location, and time-zone settings from
    [libraries-and-setup.md](libraries-and-setup.md), wire the
-   encoder now (5 wires: CLK 6, DT 7, SW 10) — it has to come before
+   encoder now (5 wires: CLK 6, DT 7, SW 10), or the push button on
+   GPIO 10 and GND if `USE_BUTTON_NAV` is 1 — it has to come before
    the DHT and weather stages, because those stages need you to
-   rotate to their pages — upload, and stay on page 1 (the clock is
-   the default page).
+   rotate (or press) to their pages — upload, and stay on page 1 (the
+   clock is the default page).
    - **Test:** the clock shows the correct local time within a few
      seconds of boot and the seconds tick. Wrong by whole hours =
      time-zone string. Stuck at `--:--` = WiFi connected but NTP not
@@ -55,12 +56,12 @@ wiring is only ~15 jumpers, so this goes fast.
      `Serial.print` of the page number should show the same behaviour.
      Screenshot: LastMinuteEngineers.
 3. **Add the DHT11.** Power down, add its 3 wires (DATA to GPIO 3),
-   power up, rotate to the Indoor page.
+   power up, rotate (or press) to the Indoor page.
    - **Test:** plausible room readings appear within a few seconds and
      update every 2.5 s. Breathe on the sensor — humidity should climb.
      "No reading" persisting = see the DHT row in
      [troubleshooting.md](troubleshooting.md).
-4. **Outdoor weather.** No new wiring — rotate to the outdoor page.
+4. **Outdoor weather.** No new wiring — rotate (or press) to the outdoor page.
    Also paste the Open-Meteo URL from [how-it-works.md](how-it-works.md)
    (with the configured coordinates and time zone filled in) into a
    browser once, to see the JSON the code is parsing.
@@ -79,14 +80,15 @@ wiring is only ~15 jumpers, so this goes fast.
 6. **Leave it running.** Park it on the Clock page, powered over
    USB-C. Check it again in 15 minutes.
    - **Test:** clock still correct, weather page has refreshed at least
-     once, indoor page still updating, knob and pot still responsive
+     once, indoor page still updating, knob (or button) and pot still responsive
      (this is the check that would catch a blocking `delay()` if one
      ever crept in).
 7. **Optional: PIR wake/sleep.** Wire the PIR (5V pin to its VCC, OUT to
    GPIO 0), set `USE_PIR` to 1 in the sketch, re-upload.
    - **Test:** wave at it — display on. Leave the room — the display
      blanks 60 s after the PIR's output drops (see [how-it-works.md](how-it-works.md#optional-pir-sleep)); turning or
-     pressing the encoder also wakes it. The HC-SR501 needs about a minute to warm up after
+     pressing the encoder (or pressing the button in
+     button mode) also wakes it. The HC-SR501 needs about a minute to warm up after
      power-up and may trigger spuriously until then.
 
 ---
