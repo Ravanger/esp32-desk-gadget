@@ -9,7 +9,7 @@ the sketch (for example `EST5EDT,M3.2.0,M11.1.0` for Eastern Time).
 That string carries both the standard/daylight offsets and the
 daylight-saving switch dates, so no separate DST handling is needed.
 
-![Diagram of communication between a client and an NTP server over UDP](https://circuitdigest.com/sites/default/files/inlineimages/u/Communication-between-UDP-and-NTP-server.png)
+![Diagram of communication between a client and an NTP server over UDP](../assets/ntp-udp.png)
 
 How NTP works, conceptually: the client asks a time server over UDP
 (port 123) and the server answers with the time of day. Diagram:
@@ -169,6 +169,13 @@ Open-Meteo ever adds a code.
 
 The default navigation input is one push button between GPIO 10 and GND, read with INPUT_PULLUP (no resistor): the line reads HIGH when released and LOW when pressed. Each press steps to the next page: Clock → Indoor → Outdoor → Summary → Clock. A press counts only if the line was HIGH for at least 30 ms, so contact bounce is ignored, and holding the button does not repeat the step. With `USE_PIR` 1, a press also wakes the display. Wiring: [wiring.md](wiring.md#push-button-wiring-4-pin).
 
+![Oscilloscope capture of a mechanical switch bouncing between low and high before settling](../assets/switch-bounce.png)
+
+Contact bounce: when a mechanical switch closes, the line chatters
+between low and high for under a millisecond before it settles
+(200 µs per division; a larger switch on a 12 V signal). The 30 ms
+rule ignores this chatter. Capture: Pololu.
+
 The optional rotary encoder (`USE_ENCODER` 1) replaces the button on GPIO 10. It works as follows.
 
 An incremental rotary encoder outputs two square waves, CLK and DT,
@@ -185,17 +192,17 @@ phase-shifted signals. On a bare encoder the terminals are A (CLK),
 B (DT) and the common C, which goes to GND. Diagram:
 LastMinuteEngineers, ESP32 Rotary Encoder Tutorial.
 
-![Animation of a rotary encoder's internal disc rotating and its CLK and DT signals changing](https://lastminuteengineers.com/wp-content/uploads/arduino/rotary-encoder-working-animation.gif)
+![Animation of a rotary encoder's internal disc rotating and its CLK and DT signals changing](../assets/encoder-animation.gif)
 
 The same mechanism in motion: as the disc turns, CLK and DT make
 contact in sequence, one always leading the other. Animation:
 LastMinuteEngineers.
 
-![CLK and DT output pulses during clockwise rotation](https://lastminuteengineers.com/wp-content/uploads/arduino/rotary-encoder-output-pulses-in-clockwise-rotation.png)
+![CLK and DT output pulses during clockwise rotation](../assets/encoder-pulses-cw.png)
 
 Clockwise: CLK leads DT. Diagram: LastMinuteEngineers.
 
-![CLK and DT output pulses during counter-clockwise rotation](https://lastminuteengineers.com/wp-content/uploads/arduino/rotary-encoder-output-pulses-in-anticlockwise-rotation.png)
+![CLK and DT output pulses during counter-clockwise rotation](../assets/encoder-pulses-ccw.png)
 
 Counter-clockwise: DT leads CLK — the phase relationship is reversed,
 and that reversal is how the code knows which way the knob turned.
@@ -236,6 +243,12 @@ onto contrast 8–255 (displayed values roughly 8–12 at one end to
 251–255 at the other, because of a hysteresis of 4). The floor of 8
 keeps the screen from going fully invisible mid-adjustment.
 
+![Voltage divider schematic: Vin, R1, Vout tap, R2 to ground](../assets/voltage-divider.png)
+
+A pot is a voltage divider: R1 and R2 are the parts of the track on
+either side of the wiper, and Vout is the wiper voltage that the ADC
+reads (here Vin is 3V3). Diagram: Wikimedia Commons, public domain.
+
 At the default 11 dB attenuation the C3 ADC's effective range is
 0–2500 mV (datasheet Table 5-6), so on a pot wired across 3V3 the top
 ~24% of travel is full brightness. That is expected, not a fault.
@@ -257,6 +270,11 @@ than elegantly dim — that is the panel, not the wiring — and for true
 the optional PIR sleep does.
 
 ## Optional PIR sleep
+
+![HC-SR501 PIR module with its pins, trigger-mode jumper and two pots labelled](../assets/pir-pinout.png)
+
+The HC-SR501's delay ("Off Time") pot and H/L jumper set how long OUT
+stays HIGH after motion. Diagram: Components101.
 
 The panel blanks 60 s after PIR OUT goes LOW — i.e. the module's
 delay-pot time plus 60 s after the last motion. Pressing the button, or turning or pressing the encoder, also wakes it.

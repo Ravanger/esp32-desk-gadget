@@ -7,6 +7,12 @@ board — do not use them. The SuperMini breaks out only 13 GPIOs:
 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 20, 21 (20/21 are the UART pins,
 left unused here). Pins 22, 25, 26, 27 and 34 do not exist on this board.
 
+![ESP32-C3 SuperMini pinout diagram from Mischianti](../assets/supermini-pinout.jpg)
+
+ESP32-C3 SuperMini pinout. Diagram: Mischianti (mischianti.org),
+CC BY-NC-ND 4.0. The diagram labels GPIO 8/9 as SDA/SCL; this build
+deliberately uses GPIO 4/5 for I2C instead (see the I2C trap below).
+
 Everything except the optional PIR runs at 3.3 V from the SuperMini's
 3V3 pin — the HC-SR501's VCC goes to the 5V pin (its OUT pin is still
 3.3 V logic, safe for GPIO 0). Wire the circuit unpowered,
@@ -89,7 +95,7 @@ wiring uses different GPIOs than this guide; keep the pattern (CLK, DT, SW each
 to a GPIO, module powered from the board) and use this guide's pins:
 CLK 6, DT 7, SW 10. Diagram: LastMinuteEngineers.
 
-![Rotary encoder module pinout: GND, +, SW, DT, CLK](https://lastminuteengineers.com/wp-content/uploads/arduino/rotary-encoder-module-pinout.png)
+![Rotary encoder module pinout: GND, +, SW, DT, CLK](../assets/encoder-pinout.png)
 
 The encoder module's pins, labelled: GND, + (power), SW (push-button),
 DT and CLK (the two quadrature signals). If your module's pin order
@@ -105,6 +111,12 @@ Nothing is powered. Optionally add a 10 nF capacitor from each of CLK
 and DT to GND to reduce bounce. If it counts backwards, swap A and B.
 
 ## Push button wiring (4-pin)
+
+![4-pin tactile push button with its two internally connected leg pairs marked](../assets/push-button-pinout.gif)
+
+The two legs inside each red box are always connected; pressing the
+button joins the two pairs. Diagonally opposite legs are always in
+different pairs. Diagram: Components101.
 
 Use a 4-pin 6 mm tactile push button for page navigation. This is the default build, so `USE_ENCODER` stays 0.
 GPIO 6 and 7 are unused.

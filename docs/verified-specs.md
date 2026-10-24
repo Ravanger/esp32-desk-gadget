@@ -82,8 +82,8 @@ here too.
 - Native USB-C, no USB-serial chip. For `Serial` over USB, use board
   "ESP32C3 Dev Module" with Tools > USB CDC On Boot > Enabled (default
   Disabled; the verified path), or "Nologo ESP32C3 Super Mini" (arduino-esp32
-  3.x; USB CDC On Boot is enabled by default in `boards.txt`; not yet
-  compile-verified with this sketch). PlatformIO board `esp32-c3-devkitm-1`
+  3.x; USB CDC On Boot is enabled by default in `boards.txt`; the sketch
+  compiles on core 3.3.12, see below). PlatformIO board `esp32-c3-devkitm-1`
   with `-DARDUINO_USB_CDC_ON_BOOT=1 -DARDUINO_USB_MODE=1`.
   Source: arduino-esp32 `boards.txt`. Checked 2026-10-24.
 - 3.3 V regulator rating varies by clone. Random Nerd Tutorials quotes
@@ -350,7 +350,14 @@ hundred bytes with library resolution). scripts/check.py compiles two
 configurations: the default, and every option define (`USE_PIR`,
 `USE_ENCODER`, `WIFI_LOW_TX_POWER`) set to 1; both compile.
 Latest stable arduino-esp32 as checked 2026-10-24: 3.3.12 (released
-2026-09-18); core 3.x is not compile-verified here.
+2026-09-18). Core 3.x result, 2026-10-24: SUCCESS for both configurations
+with no sketch warnings under `-Wall` (pioarduino platform 55.03.312-1 =
+arduino-esp32 3.3.12, PlatformIO Core 6.2.0, board `esp32-c3-devkitm-1`
+with the same CDC flags, same library versions): default RAM 12.0%
+(39,376 bytes), Flash 91.0% (1,193,313 of 1,310,720 bytes); all options
+Flash 91.1% (1,193,927 bytes). Core 3.x builds are about 250 KB larger, so
+little room is left in the default app partition. This build is run by
+hand; scripts/check.py compiles core 2.0.17 only.
 
 ## What this audit could NOT verify
 
@@ -361,8 +368,8 @@ Latest stable arduino-esp32 as checked 2026-10-24: 3.3.12 (released
 - Any specific OLED module's pull-up resistor values, regulator part, or
   whether it is 3.3 V-only; and whether a specific module's VCC/GND pin
   order matches the repo diagram. Read the silkscreen.
-- Compilation on arduino-esp32 core 3.x (only core 2.0.17 is compiled), and
-  any behaviour on real hardware: the project has not been bench-tested.
+- Any behaviour on real hardware: the project has not been bench-tested,
+  on either core.
 - KY-040 pulses per detent and pull-up resistor values.
 - PIR false triggers from RF interference.
 - Open-Meteo's free-tier enforcement (rate-limit headers) and how its

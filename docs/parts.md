@@ -15,23 +15,42 @@ headers need soldering before they fit a breadboard.
 | ~20 | Jumper wires (male-to-male) | |
 | 1 | USB-C data cable | Must carry data, not charge-only, or uploads and Serial Monitor will not work. |
 
-![ESP32 board photo from MakerGuides](https://www.makerguides.com/wp-content/uploads/2023/10/Lolin32_lite.jpg)
+![ESP32-C3 SuperMini pinout diagram from Mischianti](../assets/supermini-pinout.jpg)
 
-An ESP32 board. Photo: MakerGuides. The board in this project is the
-smaller ESP32-C3 SuperMini, not the board pictured; the photo is shown
-for the general form factor only.
+ESP32-C3 SuperMini pinout. Diagram: Mischianti (mischianti.org),
+CC BY-NC-ND 4.0. The diagram labels GPIO 8/9 as SDA/SCL; this build
+deliberately uses GPIO 4/5 for I2C instead (see
+[wiring.md](wiring.md)).
 
-![Breadboard photo from MakerGuides](https://www.makerguides.com/wp-content/uploads/2019/05/Half_breadboard56a.png)
+![Breadboard photo from MakerGuides](../assets/breadboard.png)
 
 A half-size breadboard. Photo: MakerGuides.
 
-![Jumper wire set photo from MakerGuides](https://www.makerguides.com/wp-content/uploads/2023/09/dupon_wire_set.png)
+![Jumper wire set photo from MakerGuides](../assets/jumper-wires.png)
 
 Male-to-male jumper wires. Photo: MakerGuides.
 
 ![0.96-inch SSD1306 OLED module photo from MakerGuides](../assets/oled-display.jpg)
 
 A 0.96-inch SSD1306 OLED module. Photo: MakerGuides.
+
+![DHT11 pinout: bare 4-pin sensor and 3-pin module](../assets/dht11-pinout.jpg)
+
+Left: a bare 4-pin DHT11 (pin 3 is not connected). Right: the 3-pin
+module this build uses. Module pin order varies, so read the
+silkscreen. Diagram: Components101.
+
+![4-pin tactile push button with its two internally connected leg pairs marked](../assets/push-button-pinout.gif)
+
+The two legs inside each red box are always connected; pressing the
+button joins the two pairs. Diagonally opposite legs are always in
+different pairs. Diagram: Components101.
+
+![Panel-mount rotary potentiometer with three solder lugs](../assets/potentiometer.jpg)
+
+A panel-mount rotary potentiometer. The middle lug is the wiper; the
+outer lugs are the two ends of the track. Photo: Richard Wheeler
+(Zephyris), Wikimedia Commons, CC BY-SA 3.0.
 
 ## Optional parts
 
@@ -40,6 +59,13 @@ A 0.96-inch SSD1306 OLED module. Photo: MakerGuides.
 | 1 | HC-SR501 PIR motion sensor | Only for the wake/sleep extra. Skip it on the first build. Wired to GPIO 0, with VCC on the 5V pin (its OUT pin is 3.3 V logic). Check its H/L trigger-mode jumper (H = repeatable, L = non-repeatable; most default H) and its delay/sensitivity pots — the delay pot spans roughly 5–300 s, the module needs about a minute to warm up after power-up, and the display blanks 60 s after the PIR's output drops (see [how-it-works.md](how-it-works.md#optional-pir-sleep)). |
 | 1 | TTP223 capacitive touch module | Alternative page control instead of the push button. A default TTP223 (both jumpers unsoldered) is momentary active-HIGH (OUT HIGH on touch), which is exactly backwards for the sketch's active-LOW button logic, and there is no TTP223 code path in the sketch. Solder jumper A for active-low output, or invert the logic for that input — not both. Power it from 3V3 only: its output is VCC-driven, so 5 V power would drive OUT to ~4 V. Do NOT wire a TTP223 (or a button) on GPIO 10 at the same time as the encoder's SW pin — a button press would short TTP223 OUT to GND. The ESP32-C3 has no capacitive-touch peripheral, so a bare wire or foil pad cannot be used for touch on this board — the module is required. |
 | 1 | Rotary encoder module (CLK / DT / SW) | Optional alternative to the push button, on the same GPIO 10; fit one or the other. Set `USE_ENCODER` to 1 after wiring it (CLK 6, DT 7, SW 10, plus 3V3 and GND): rotate steps pages both ways, and a press jumps to Summary and back to Clock. A bare encoder (no module board) also works: C (common) to GND, A to GPIO 6, B to GPIO 7, switch terminals to GPIO 10 and GND, no power; see [wiring.md](wiring.md). |
+
+![HC-SR501 PIR module with its pins, trigger-mode jumper and two pots labelled](../assets/pir-pinout.png)
+
+HC-SR501 PIR module: Gnd, OUT ("Dout") and Vcc pins, the H/L
+trigger-mode jumper, and the sensitivity and delay ("Off Time") pots.
+Pin order can differ between clones, so read the silkscreen. Diagram:
+Components101.
 
 ## Parts not needed
 

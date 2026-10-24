@@ -20,8 +20,8 @@ needs the Arduino IDE or PlatformIO.
 > GPIO 1). Pin numbers from classic ESP32 guides (21/22, 25/26/27, 34)
 > do not apply to this board — see [docs/wiring.md](docs/wiring.md).
 
-Bench-test status: compile-verified on arduino-esp32 2.0.17
-(PlatformIO) only; core 3.x is not yet compile-verified. Not yet
+Bench-test status: compile-verified on arduino-esp32 2.0.17 and 3.3.12
+(PlatformIO). Not yet
 bench-tested on hardware — measured values in [docs/hardware-tests.md](docs/hardware-tests.md)
 are blank until someone records them.
 
