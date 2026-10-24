@@ -9,69 +9,111 @@ stage 0 (unpowered checks), stage 6 here (leave it running) has no test
 page there, and the PIR is stage 7 here but stage 6 there. Total
 wiring is only ~15 jumpers, so this goes fast.
 
-> **Firmware:** the steps below are written for the Arduino sketch
-> (Serial Monitor at 115200 baud, `USE_ENCODER` / `USE_PIR`, re-upload).
-> With the default ESPHome build the wiring order and the on-screen
-> results are the same: set `use_encoder` / `use_pir` in the YAML
-> instead of the defines, reflash with `esphome run`, and read the
-> log with `esphome logs` instead of the Serial Monitor. The log
-> lines differ from the sketch's (see [esphome.md](esphome.md)), and
-> the outdoor stage needs the device added in Home Assistant.
+Each stage gives the steps for the default ESPHome firmware first,
+then for the standalone Arduino sketch where they differ. The wiring
+and the on-screen results are the same for both.
+
+- **ESPHome:** flash with `esphome run esphome/desk_gadget.yaml`
+  (over USB the first time, over the air after that) and read the log
+  with `esphome logs esphome/desk_gadget.yaml`. Options are the
+  `use_encoder` / `use_pir` substitutions in the YAML. Setup is in
+  [esphome.md](esphome.md).
+- **Sketch:** upload from the Arduino IDE or PlatformIO and read the
+  Serial Monitor at 115200 baud. Options are the `USE_ENCODER` /
+  `USE_PIR` defines. Setup is in
+  [libraries-and-setup.md](libraries-and-setup.md).
 
 1. **OLED only.** Wire just the display (4 wires: SDA GPIO 4, SCL
-   GPIO 5, [wiring.md](wiring.md)) and upload the full sketch; it works
-   for bring-up with nothing else connected. This deliberately replaces
-   the earlier minimal-test-sketch approach: the full sketch now gives up
-   on WiFi after 30 s, so it runs with only the board connected. With wrong or missing
-   WiFi settings the OLED shows "Connecting WiFi..." for up to 30 s,
-   then the clock page with `--:--`. Until the pot is wired, GPIO 1
-   floats and the brightness may wander; tie GPIO 1 to 3V3 (reads full
-   scale = full brightness) until stage 5 if that bothers you. Remove
-   that tie wire at stage 5 before fitting the pot, or the wiper is
-   shorted to 3V3 and the pot does nothing. (If Serial shows nothing at all, check
-   USB CDC On Boot is enabled — see
-   [libraries-and-setup.md](libraries-and-setup.md).)
-   - **Test:** text on the OLED, and Serial Monitor (115200 baud) shows
-     no "OLED not found at 0x3C" message. Black screen? Jump to
-     [troubleshooting.md](troubleshooting.md) before continuing.
-2. **WiFi + clock + button.** Fill in the WiFi credentials,
-   location, and time-zone settings from
-   [libraries-and-setup.md](libraries-and-setup.md), wire the
-   push button now (2 wires: GPIO 10 and GND), or the encoder (5 wires: CLK 6, DT 7, SW 10, plus 3V3 and GND) if `USE_ENCODER` is 1 — it has to come before the DHT and weather stages, because those stages need you to press (or rotate) to their pages — upload, and stay on page 1 (the
-   clock is the default page).
+   GPIO 5, [wiring.md](wiring.md)) and flash the full firmware; it
+   works for bring-up with nothing else connected. Until the pot is
+   wired, GPIO 1 floats and the brightness may wander; tie GPIO 1 to
+   3V3 (reads full scale = full brightness) until stage 5 if that
+   bothers you. Remove that tie wire at stage 5 before fitting the
+   pot, or the wiper is shorted to 3V3 and the pot does nothing.
+   - **ESPHome:** do setup steps 1–5 in [esphome.md](esphome.md)
+     first (secrets, substitutions, `esphome config`, first USB flash).
+     The display shows the clock page within about a second, with
+     `--:--` until NTP syncs; there is no "Connecting WiFi..." line.
+   - **Sketch:** the sketch gives up on WiFi after 30 s, so it runs
+     with only the board connected. With wrong or missing WiFi
+     settings the OLED shows "Connecting WiFi..." for up to 30 s,
+     then the clock page with `--:--`. (If Serial shows nothing at
+     all, check USB CDC On Boot is enabled — see
+     [libraries-and-setup.md](libraries-and-setup.md).)
+   - **Test:** text on the OLED. ESPHome: the I2C scan in the log
+     lists a device at 0x3C. Sketch: the Serial Monitor shows no
+     "OLED not found at 0x3C" message. Black screen? Jump to
+     [troubleshooting.md](troubleshooting.md) (and, for ESPHome, the
+     troubleshooting list in [esphome.md](esphome.md#troubleshooting))
+     before continuing.
+2. **WiFi + clock + button.** Wire the push button now (2 wires:
+   GPIO 10 and GND), or the encoder (5 wires: CLK 6, DT 7, SW 10, plus
+   3V3 and GND) if the encoder option is on — it has to come before
+   the DHT and weather stages, because those stages need you to press
+   (or rotate) to their pages. Stay on page 1 (the clock is the
+   default page).
+   - **ESPHome:** WiFi and the time zone were set in stage 1. For the
+     encoder, set `use_encoder: "true"` and run `esphome run` again.
+     Now add the device in Home Assistant (step 6 in
+     [esphome.md](esphome.md)); the outdoor stage needs it.
+   - **Sketch:** fill in the WiFi credentials, location, and
+     time-zone settings from
+     [libraries-and-setup.md](libraries-and-setup.md), set
+     `USE_ENCODER` to 1 for the encoder, and upload.
    - **Test:** the clock shows the correct local time within a few
      seconds of boot and the seconds tick. Wrong by whole hours =
-     time-zone string. Stuck at `--:--` = WiFi connected but NTP not
-     yet synced; a WiFi failure instead shows "Connecting WiFi..."
-     then the clock page with `--:--`, and Serial prints
-     "WiFi: connection failed (30 s timeout)". Pressing the button steps the pages 1→2→3→4→1, one page per press; holding it does not repeat. Encoder build (`USE_ENCODER` 1): turning the knob cycles pages 1→2→3→4→1, the other way goes backwards, and a press jumps to Summary and back to Clock; a press does not step through pages there.
-     Encoder build: counts backwards? Swap CLK and DT — that's
-     a fix, not a failure. Double-steps or missed steps? See the
-     "Encoder double-steps or skips" row in
-     [troubleshooting.md](troubleshooting.md).
+     time zone (`timezone` in the YAML, `TIMEZONE_POSIX` in the
+     sketch). Stuck at `--:--` = NTP not yet synced or WiFi down: the
+     Summary page shows "WiFi DOWN" (ESPHome) or the Serial Monitor
+     prints "WiFi: connection failed (30 s timeout)" (sketch).
+   - **Test:** pressing the button steps the pages 1→2→3→4→1, one
+     page per press; holding it does not repeat. With ESPHome, the
+     Desk Gadget Button entity in Home Assistant turns on while the
+     button is held. Encoder build: turning the knob cycles pages
+     1→2→3→4→1, the other way goes backwards, and a press jumps to
+     Summary and back to Clock; a press does not step through pages
+     there. Encoder counts backwards? Swap CLK and DT — that's a fix,
+     not a failure. Double-steps or missed steps? See the "Encoder
+     double-steps or skips" row in
+     [troubleshooting.md](troubleshooting.md), or for ESPHome try
+     `resolution: 2` (see [esphome.md](esphome.md#troubleshooting)).
 
      ![Serial Monitor output showing encoder direction and counter as the knob is turned](../assets/encoder-serial-monitor.png)
 
-     Encoder build (`USE_ENCODER` 1): what a working encoder looks like in the Serial Monitor, from the
-     LastMinuteEngineers tutorial: direction (CW/CCW) and a counter that
-     goes up one way and down the other. Adding a temporary
-     `Serial.print` of the page number should show the same behaviour.
-     Screenshot: LastMinuteEngineers.
+     Sketch, encoder build: what a working encoder looks like in the
+     Serial Monitor, from the LastMinuteEngineers tutorial: direction
+     (CW/CCW) and a counter that goes up one way and down the other.
+     Adding a temporary `Serial.print` of the page number should show
+     the same behaviour. Screenshot: LastMinuteEngineers.
 3. **Add the DHT11.** Power down, add its 3 wires (DATA to GPIO 3),
    power up, press (or rotate) to the Indoor page.
    - **Test:** plausible room readings appear within a few seconds and
      update every 2.5 s. Breathe on the sensor — humidity should climb
-     (over about 12 s, because the display averages the last 5 reads).
+     (over about 12 s, because both firmwares average the last 5
+     reads). With ESPHome, the Indoor Temperature and Indoor Humidity
+     entities in Home Assistant show the same averaged values.
      "No reading" persisting = see the DHT row in
      [troubleshooting.md](troubleshooting.md).
-4. **Outdoor weather.** No new wiring — press (or rotate) to the outdoor page.
-   Also paste the Open-Meteo URL from [how-it-works.md](how-it-works.md)
-   (with the configured coordinates and time zone filled in) into a
-   browser once, to see the JSON the code is parsing.
-   - **Test:** the page fills in on the first fetch (it runs as soon
-     as WiFi is connected, then every 10 minutes after a success and
-     every 60 s after a failure) and the numbers match the browser's
-     JSON. Serial Monitor prints the HTTP code if the fetch fails.
+4. **Outdoor weather.** No new wiring — press (or rotate) to the
+   outdoor page.
+   - **ESPHome:** the values come from the Home Assistant weather
+     entity named in `weather_entity`, so the device must be added in
+     Home Assistant (stage 2). Open that entity in Home Assistant to
+     see the values the device is importing.
+   - **Sketch:** paste the Open-Meteo URL from
+     [how-it-works.md](how-it-works.md) (with the configured
+     coordinates and time zone filled in) into a browser once, to see
+     the JSON the code is parsing.
+   - **Test:** the page fills in and the numbers match the source.
+     ESPHome: they match the weather entity's temperature, humidity,
+     and wind, in its units, and the header reads
+     `<location_name> - HA`. "Waiting for first fetch..." persisting
+     = the device is not added in Home Assistant, or `weather_entity`
+     is wrong (see [esphome.md](esphome.md#troubleshooting)). Sketch:
+     the first fetch runs as soon as WiFi is connected, then every
+     10 minutes after a success and every 60 s after a failure, and
+     the numbers match the browser's JSON. The Serial Monitor prints
+     the HTTP code if the fetch fails.
 5. **Add the potentiometer.** Power down, wire the pot (ends to
    3V3/GND, wiper to GPIO 1), power up. If you tied GPIO 1 to 3V3
    earlier, remove that wire first.
@@ -82,15 +124,23 @@ wiring is only ~15 jumpers, so this goes fast.
      is full brightness because the ADC saturates near 2.5 V.
 6. **Leave it running.** Park it on the Clock page, powered over
    USB-C. Check it again in 15 minutes.
-   - **Test:** clock still correct, weather page has refreshed at least
-     once, indoor page still updating, button (or knob) and pot still responsive
-     (this is the check that would catch a blocking `delay()` if one
-     ever crept in).
-7. **Optional: PIR wake/sleep.** Wire the PIR (5V pin to its VCC, OUT to
-   GPIO 0), set `USE_PIR` to 1 in the sketch, re-upload.
+   - **Test:** clock still correct, indoor page still updating,
+     outdoor page still filled in, button (or knob) and pot still
+     responsive (this is the check that would catch a blocking
+     `delay()` if one ever crept in). Sketch: the weather page has
+     refreshed at least once. ESPHome: Home Assistant only sends a
+     change, so a climbing "Updated N min ago" with a steady outdoor
+     temperature is expected, not a fault.
+7. **Optional: PIR wake/sleep.** Wire the PIR (5V pin to its VCC, OUT
+   to GPIO 0), then enable it: ESPHome, set `use_pir: "true"` and run
+   `esphome run`; sketch, set `USE_PIR` to 1 and re-upload.
    - **Test:** wave at it — display on. Leave the room — the display
-     blanks 60 s after the PIR's output drops (see [how-it-works.md](how-it-works.md#optional-pir-sleep)); pressing the button (or turning or pressing the encoder) also wakes it. The HC-SR501 needs about a minute to warm up after
-     power-up and may trigger spuriously until then.
+     blanks 60 s after the PIR's output drops (see
+     [how-it-works.md](how-it-works.md#optional-pir-sleep)); pressing
+     the button (or turning or pressing the encoder) also wakes it.
+     With ESPHome, the Desk Gadget Motion entity in Home Assistant
+     follows the PIR output. The HC-SR501 needs about a minute to warm
+     up after power-up and may trigger spuriously until then.
 
 ---
 

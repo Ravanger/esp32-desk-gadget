@@ -10,14 +10,13 @@ All voltages are measured with the board powered over USB-C and a
 multimeter, black lead on a SuperMini GND pin. All pins are
 SuperMini GPIOs. Power off before changing any wiring (the one exception is the DHT11 data-wire test in stage 3).
 
-> **Firmware:** the steps below are written for the Arduino sketch
-> (Serial Monitor at 115200 baud, `USE_ENCODER` / `USE_PIR`, re-upload).
-> With the default ESPHome build the wiring order and the on-screen
-> results are the same: set `use_encoder` / `use_pir` in the YAML
-> instead of the defines, reflash with `esphome run`, and read the
-> log with `esphome logs` instead of the Serial Monitor. The log
-> lines differ from the sketch's (see [esphome.md](esphome.md)), and
-> the outdoor stage needs the device added in Home Assistant.
+The checks apply to both firmwares. Where they differ, the item says
+**ESPHome** (the default: `esphome run` to flash, `esphome logs` for
+the log, `use_encoder` / `use_pir` in the YAML; see
+[esphome.md](esphome.md)) or **Sketch** (the standalone backup:
+upload and the Serial Monitor at 115200 baud, `USE_ENCODER` /
+`USE_PIR` defines; see [libraries-and-setup.md](libraries-and-setup.md)).
+Record which firmware a run used.
 
 ## Stage 0 — Unpowered checks
 
@@ -32,75 +31,105 @@ SuperMini GPIOs. Power off before changing any wiring (the one exception is the 
 
 - [ ] Plug in USB-C. Measure SuperMini 3V3 pin: expect about 3.3 V.
       Measured: ______ V
-- [ ] Upload the sketch (see [libraries-and-setup.md](libraries-and-setup.md)).
-      The OLED lights and shows the clock screen.
-- [ ] If the OLED stays black: run an I2C scanner sketch first.
-      Expect exactly one device at 0x3C (a few modules are 0x3D —
-      if you see 0x3D, change the address in the sketch, do not
-      rewire). If no device appears, recheck SDA GPIO 4 / SCL
+- [ ] Flash the firmware. ESPHome: setup steps 1–5 in
+      [esphome.md](esphome.md), first flash over USB. Sketch: see
+      [libraries-and-setup.md](libraries-and-setup.md). The OLED
+      lights and shows the clock screen.
+- [ ] If the OLED stays black, find the I2C address first. ESPHome:
+      the I2C scan in `esphome logs` lists what answered. Sketch: run
+      an I2C scanner sketch. Expect exactly one device at 0x3C (a few
+      modules are 0x3D — if you see 0x3D, change the address
+      (`address:` under `display:` in the YAML, or in the sketch), do
+      not rewire). If no device appears, recheck SDA GPIO 4 / SCL
       GPIO 5, then VCC/GND.
 - [ ] Measure total current (USB meter, if available): idle expect
-      tens of mA; during a weather fetch expect brief TX peaks (up
-      to 335 mA per datasheet Table 5-7 for the ESP32-C3 alone, plus the OLED), within
-      the regulator rating of your board (which varies by clone). Measured idle:
-      ______ mA, peak during fetch: ______ mA
+      tens of mA; during WiFi transmit (a weather fetch on the sketch,
+      an OTA update on ESPHome) expect brief TX peaks (up to 335 mA
+      per datasheet Table 5-7 for the ESP32-C3 alone, plus the OLED),
+      within the regulator rating of your board (which varies by
+      clone). Measured idle: ______ mA, peak during WiFi transmit:
+      ______ mA
 
 ## Stage 2 — Clock (NTP) and button (or encoder)
 
 The button (or encoder) is tested here, before the indoor and outdoor stages,
 because those stages need you to press (or rotate) to their pages.
 
-- [ ] Serial Monitor shows "WiFi: connecting..." then
-      "WiFi: connected" on a 2.4 GHz network (the ESP32-C3 has no
-      5 GHz radio). A "WiFi: connection failed (30 s timeout)"
-      message means this stage has not passed — the clock will
-      show `--:--` until NTP syncs.
+- [ ] WiFi joins a 2.4 GHz network (the ESP32-C3 has no 5 GHz radio).
+      ESPHome: the Summary page reads "WiFi connected", and the
+      device can be added in Home Assistant (step 6 in
+      [esphome.md](esphome.md)); add it now, stage 4 needs it.
+      Sketch: the Serial Monitor shows "WiFi: connecting..." then
+      "WiFi: connected"; a "WiFi: connection failed (30 s timeout)"
+      message means this stage has not passed. Either way the clock
+      shows `--:--` until NTP syncs.
 - [ ] Clock screen time matches a known clock (phone) within a
       second, and the date is correct for the configured time zone.
 - [ ] After a power cycle, the clock resyncs on its own — no
-      button press, no re-upload. (It shows `--:--` until the first
+      button press, no reflash. (It shows `--:--` until the first
       NTP sync and never blocks the display.)
 - [ ] Button (the default build): each press steps the pages in order,
       Clock → Indoor → Outdoor → Summary, then wraps back to Clock.
       Holding the button down does not repeat the step. One press is
       exactly one page step: no double steps and no skipped pages.
-- [ ] Encoder build (`USE_ENCODER` 1): rotate the encoder: pages change in
-      order Clock → Indoor → Outdoor → Summary, and back the other way
-      when rotated the other way. If it counts backwards, swap CLK/DT (GPIO 6/7).
-- [ ] Encoder build (`USE_ENCODER` 1): press the encoder: the display jumps
-      to the Summary page; press again: back to Clock. A press does not
-      step through pages, and holding it down does not re-trigger.
+      ESPHome: the Desk Gadget Button entity in Home Assistant is on
+      while the button is held and off when released.
+- [ ] Encoder build (`use_encoder: "true"` / `USE_ENCODER` 1): rotate
+      the encoder: pages change in order Clock → Indoor → Outdoor →
+      Summary, and back the other way when rotated the other way. If
+      it counts backwards, swap CLK/DT (GPIO 6/7).
+- [ ] Encoder build: press the encoder: the display jumps to the
+      Summary page; press again: back to Clock. A press does not step
+      through pages, and holding it down does not re-trigger.
 
 ## Stage 3 — Indoor (DHT11)
 
 - [ ] Indoor screen shows a temperature and humidity reading, not
-      "No reading" (before the first good read) or NaN.
+      "No reading" (before the first good read) or NaN. ESPHome: the
+      Indoor Temperature and Indoor Humidity entities in Home
+      Assistant show the same values.
 - [ ] Compare against a known thermometer/hygrometer in the same
       room: expect agreement within the DHT11 limits, ±2 °C and
       ±5 % RH. Larger disagreement is a sensor or placement
       problem, not a reason to "calibrate" the reading in code.
 - [ ] While the gadget is running, unplug the DHT11 DATA wire: the
       indoor screen must keep showing the last good reading, not
-      jump to 0 or NaN. (After a reboot with the wire unplugged
-      there is no last value, so it shows "No reading".) Reconnect
-      it: readings resume within a few seconds (the sketch reads
-      every 2.5 seconds; the DHT11 maximum rate is 1 Hz).
+      jump to 0 or NaN (ESPHome: the Home Assistant entities keep
+      it too). After a reboot with the wire unplugged there is no
+      last value, so it shows "No reading". Reconnect it: readings
+      resume within a few seconds (both firmwares read every
+      2.5 seconds; the DHT11 maximum rate is 1 Hz).
       This is the one live change allowed: pulling only the DATA jumper
       (never VCC or GND) and plugging it back in is safe because it is a
       3.3 V signal line.
 
-## Stage 4 — Outdoor (Open-Meteo)
+## Stage 4 — Outdoor weather
 
-- [ ] Outdoor screen fills in shortly after WiFi connects
+ESPHome takes outdoor weather from a Home Assistant weather entity;
+the sketch fetches it from Open-Meteo.
+
+- [ ] ESPHome: with the device added in Home Assistant, the outdoor
+      screen fills in, headed `<location_name> - HA`.
+      Temperature, humidity, condition, and wind match the
+      `weather_entity` in Home Assistant, in its units. The condition
+      label follows the mapping in [esphome.md](esphome.md), not the
+      WMO table.
+- [ ] ESPHome: the outdoor screen shows "Waiting for first fetch..."
+      until Home Assistant sends a value — no invented data. If Home
+      Assistant goes down after that, the last values stay on screen
+      and "Updated N min ago" keeps counting. It counts from the last
+      change Home Assistant sent, so it also climbs while the
+      temperature is steady.
+- [ ] Sketch: the outdoor screen fills in shortly after WiFi connects
       (the first fetch runs as soon as WiFi is up, then every 10
       minutes after a success and every 60 s after a failure). A
       failing fetch typically blocks for a few seconds and at worst
       about 12 s plus DNS lookup time, so button or encoder input during a fetch is missed. The page shows "Updated N min ago".
-- [ ] Temperature, humidity, condition, and wind match Open-Meteo
-      for the configured location when the same URL from
+- [ ] Sketch: temperature, humidity, condition, and wind match
+      Open-Meteo for the configured location when the same URL from
       [how-it-works.md](how-it-works.md) is opened in a browser.
-- [ ] With WiFi off from boot (or the wrong WiFi password), the
-      outdoor screen shows "Waiting for first fetch..." — no
+- [ ] Sketch: with WiFi off from boot (or the wrong WiFi password),
+      the outdoor screen shows "Waiting for first fetch..." — no
       invented data. If WiFi drops after a successful fetch, the
       last fetched values stay displayed (the sketch keeps the
       last good values on a failed fetch), so a stale display
@@ -130,20 +159,23 @@ because those stages need you to press (or rotate) to their pages.
 
 - [ ] PIR VCC is on 5V, OUT on GPIO 0, GND on GND. Measure OUT with
       no motion: expect ~0 V; with motion: expect about 3.3 V.
-- [ ] Set `USE_PIR` to 1, re-upload, and wait a minute after
+- [ ] Enable the PIR (ESPHome: `use_pir: "true"`, then `esphome run`;
+      sketch: `USE_PIR` to 1, re-upload) and wait a minute after
       power-up: the HC-SR501 triggers spuriously until it settles.
 - [ ] Wave at it: display on. Leave the room: the display
       blanks 60 s after the PIR's output drops (see [how-it-works.md](how-it-works.md#optional-pir-sleep)).
       Pressing the button (or turning or pressing the encoder) also wakes it.
+- [ ] ESPHome: the Desk Gadget Motion entity in Home Assistant turns
+      on with motion and off when the PIR's output drops.
 
 ## If a stage fails
 
-Stop at that stage. Do not "fix" it by changing a pin in the sketch
-to match a miswired board, or by changing a spec in a doc to match
-a wrong reading — fix the wiring or the code, then re-run that
-stage from the top. Note the failure, the measurement, and the fix
-in the build log; that note is what turns a one-off bench session
-into a verified guide.
+Stop at that stage. Do not "fix" it by changing a pin in the YAML or
+the sketch to match a miswired board, or by changing a spec in a doc
+to match a wrong reading — fix the wiring or the code, then re-run
+that stage from the top. Note the failure, the measurement, the
+firmware, and the fix in the build log; that note is what turns a
+one-off bench session into a verified guide.
 
 ---
 
