@@ -1,5 +1,9 @@
 # Libraries & setup
 
+This page is for the standalone Arduino sketch, the backup to the
+default ESPHome firmware ([esphome.md](esphome.md)). Use it if you do
+not run Home Assistant; skip it if you flashed the ESPHome build.
+
 Work in the Arduino IDE or PlatformIO — the sketch in
 [`../firmware/desk_gadget.ino`](../firmware/desk_gadget.ino) is plain
 Arduino-framework ESP32 either way.
@@ -144,4 +148,4 @@ update it.
 
 ---
 
-[← Previous: Wiring](wiring.md) · [Contents](../README.md) · [Next: How it works →](how-it-works.md)
+[← Previous: ESPHome](esphome.md) · [Contents](../README.md) · [Next: How it works →](how-it-works.md)

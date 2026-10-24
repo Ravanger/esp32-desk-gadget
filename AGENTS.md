@@ -47,6 +47,39 @@ conflicts with a general instruction, this file wins for this repo.
   TTP223 module, never a bare wire or foil pad.
 - The C3 has no 5 GHz radio. All WiFi instructions must say 2.4 GHz.
 
+## ESPHome (default firmware)
+
+- `esphome/desk_gadget.yaml` is the default firmware, for Home
+  Assistant. The Arduino sketch is the standalone backup for builders
+  without Home Assistant, on the same hardware and wiring. Keep both
+  working and in parity: never remove the sketch, never let a
+  behaviour change land in one without the other (or a recorded
+  deliberate difference in docs/esphome.md), and never change the
+  wiring for one firmware alone.
+- The ESPHome YAML must use the frozen pins above. Its
+  `use_encoder` / `use_pir` substitutions are the ESPHome form of
+  the sketch's `USE_ENCODER` / `USE_PIR` defines: changing them
+  needs a recompile.
+- Outdoor weather in the ESPHome build comes from a Home Assistant
+  weather entity, not Open-Meteo. The WMO code table does not apply
+  to it; condition labels are mapped from Home Assistant condition
+  strings (see docs/esphome.md for the mapping and the other
+  deliberate differences). Do not "fix" the ESPHome condition labels
+  back to WMO codes.
+- Never commit `esphome/secrets.yaml` or ESPHome build output. Both
+  are gitignored. The example file is `esphome/secrets.example.yaml`.
+- `scripts/check.py` validates the ESPHome YAML (each frozen pin in
+  its role, no other GPIO, secrets example, gitignore) and, on a full
+  run with the `esphome` tool installed, runs `esphome config` on a
+  copy with throwaway secrets; otherwise that step prints SKIP. An
+  ESPHome change that fails the static checks is not done, same as a
+  sketch change. `esphome config` does not compile: record compile
+  results in docs/verified-specs.md, as for the sketch.
+- ESPHome behaviour claims (what a component publishes on failure,
+  defaults such as WiFi `reboot_timeout`, version floors) must be
+  checked against the ESPHome source for the recorded version, not
+  assumed from the sketch.
+
 ## Facts, not memory
 
 - Never assert a specification, pin, or weather code from memory.

@@ -1,5 +1,12 @@
 # How each piece works
 
+> **Firmware:** this page describes the Arduino sketch. The default
+> ESPHome build uses the same hardware and the same rules (clock,
+> DHT11 interval and averaging, button, encoder, pot, PIR), but gets
+> outdoor weather from Home Assistant instead of Open-Meteo and uses
+> `use_encoder` / `use_pir` instead of the `USE_*` defines. Its
+> differences are listed in [esphome.md](esphome.md).
+
 ## The clock — NTP over WiFi
 
 The SuperMini has no battery-backed RTC, so on boot it asks an
@@ -67,6 +74,12 @@ Two rules, both baked into the code:
   the Indoor page shows "No reading" and the Summary page "In --" until
   the first good read (after a reboot there is no last value), instead
   of printing `nan`.
+
+The display shows the mean of the last 5 good reads (about 12.5 s),
+not the latest single read. The DHT11 reports whole degrees and whole
+percent, so a room sitting between two values would otherwise make
+the display flip back and forth. Averaging steadies the number; it
+does not make the sensor more accurate than ±2 °C / ±5 % RH.
 
 And a rule for the whole program: **no long `delay()` calls in the
 main loop.** A single-screen station can sleep for 10 minutes between

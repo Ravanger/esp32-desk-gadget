@@ -1,0 +1,5 @@
+# ESPHome build output and secrets. Never commit these.
+.esphome/
+esphome/.esphome/
+esphome/build/
+esphome/secrets.yaml
