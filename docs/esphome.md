@@ -177,7 +177,7 @@ that deliberately differs is listed separately, below the table.
 - **Outdoor page stuck on "Waiting for first fetch..."**: the device
   is not yet added in Home Assistant, or `weather_entity` names an
   entity that does not exist or has no temperature attribute. Add
-  the device first (step 7 above), then check the entity name.
+  the device first (step 6 above), then check the entity name.
 - **Clock stuck on `--:--`**: WiFi is not connected or NTP is
   blocked. Check the WiFi credentials in `secrets.yaml`, that the
   network is 2.4 GHz, and the serial logs over USB.
