@@ -70,14 +70,14 @@ Two rules, both baked into the code:
 
 And a rule for the whole program: **no long `delay()` calls in the
 main loop.** A single-screen station can sleep for 10 minutes between
-weather fetches, but here that would freeze the encoder and the clock.
+weather fetches, but here that would freeze the button or encoder and the clock.
 Every recurring job in this sketch (DHT, weather, redraw, pot) runs off
 its own `millis()` timer, so everything stays responsive at once.
 One exception to know about: the weather fetch itself is a blocking
 HTTPS request with a 4 s connect, a 4 s TLS handshake and a 4 s read
 timeout (the core's default handshake timeout is 120 s). A failing fetch
 usually blocks for a few seconds and at worst about 12 s plus DNS lookup
-time, and encoder turns during that window are missed. That is an accepted trade-off, not a bug to chase.
+time, and button presses and encoder turns during that window are missed. That is an accepted trade-off, not a bug to chase.
 
 ## Outdoor weather — Open-Meteo, no key
 
@@ -165,7 +165,11 @@ table (including 98 in the full WMO set, which Open-Meteo does not
 return) shows as `-` on the screen, which is the safe fallback if
 Open-Meteo ever adds a code.
 
-## Navigation — the rotary encoder
+## Navigation — the push button and the optional encoder
+
+The default navigation input is one push button between GPIO 10 and GND, read with INPUT_PULLUP (no resistor): the line reads HIGH when released and LOW when pressed. Each press steps to the next page: Clock → Indoor → Outdoor → Summary → Clock. A press counts only if the line was HIGH for at least 30 ms, so contact bounce is ignored, and holding the button does not repeat the step. With `USE_PIR` 1, a press also wakes the display. Wiring: [wiring.md](wiring.md#push-button-wiring-4-pin).
+
+The optional rotary encoder (`USE_ENCODER` 1) replaces the button on GPIO 10. It works as follows.
 
 An incremental rotary encoder outputs two square waves, CLK and DT,
 90° out of phase. Both look identical on their own; the trick is that
@@ -213,21 +217,13 @@ Two ways to read it, both covered by the LastMinuteEngineers tutorial:
 
 Three practical details: the pins are configured INPUT_PULLUP (the
 signals are mechanical switches to GND: HIGH open, LOW closed);
-the push button is edge-triggered (it acts only on the HIGH→LOW
+the encoder's push switch is edge-triggered (it acts only on the HIGH→LOW
 transition, and a press counts only if the line was released for at
 least 30 ms, so contact bounce and holding it down do not re-trigger
-— in encoder mode a press jumps to Summary, a second press returns to
+— a press jumps to Summary, a second press returns to
 Clock, it never steps through pages); and if the knob counts
 backwards, just swap the CLK and DT wires (or swap the two pin
 numbers in code). Both are equally correct fixes.
-
-**Button mode (`USE_BUTTON_NAV` 1).** The encoder is not read at all,
-and GPIO 6 and 7 are unused. A push button between GPIO 10 and GND
-steps through the pages in order, Clock → Indoor → Outdoor → Summary
-→ Clock, one step per press. Holding the button does not repeat, and
-bounce is ignored by the same 30 ms rule. With `USE_PIR` 1, a press
-also wakes the display. See
-[wiring.md](wiring.md#alternative-push-button-instead-of-encoder).
 
 ## Dimming — there is no backlight to dim
 
@@ -263,8 +259,7 @@ the optional PIR sleep does.
 ## Optional PIR sleep
 
 The panel blanks 60 s after PIR OUT goes LOW — i.e. the module's
-delay-pot time plus 60 s after the last motion. Turning or pressing the
-encoder also wakes it.
+delay-pot time plus 60 s after the last motion. Pressing the button, or turning or pressing the encoder, also wakes it.
 
 ---
 

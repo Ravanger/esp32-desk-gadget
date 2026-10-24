@@ -54,9 +54,9 @@ EXPECTED_PINS = {
     "OLED_SDA": "4",
     "OLED_SCL": "5",
     "DHT_PIN": "3",
+    "BUTTON_PIN": "10",
     "ENC_CLK": "6",
     "ENC_DT": "7",
-    "ENC_SW": "10",
     "POT_PIN": "1",
     "PIR_PIN": "0",
 }
@@ -172,9 +172,10 @@ SIGNAL_PINS = {
     ("OLED (SSD1306)", "SDA"): "4",
     ("OLED (SSD1306)", "SCL"): "5",
     ("DHT11", "DATA (OUT)"): "3",
-    ("Rotary encoder", "CLK"): "6",
-    ("Rotary encoder", "DT"): "7",
-    ("Rotary encoder", "SW"): "10",
+    ("Push button", "Leg A"): "10",
+    ("Rotary encoder (optional)", "CLK"): "6",
+    ("Rotary encoder (optional)", "DT"): "7",
+    ("Rotary encoder (optional)", "SW"): "10",
     ("Potentiometer (10K)", "Wiper (middle)"): "1",
     ("PIR (optional)", "OUT"): "0",
 }
@@ -195,7 +196,8 @@ for key, want in SIGNAL_PINS.items():
 POWER = {
     ("OLED (SSD1306)", "VCC"): "3V3",
     ("DHT11", "VCC"): "3V3",
-    ("Rotary encoder", "+ / VCC"): "3V3",
+    ("Push button", "Leg B"): "GND",
+    ("Rotary encoder (optional)", "+ / VCC"): "3V3",
     ("Potentiometer (10K)", "End 1"): "3V3",
     ("Potentiometer (10K)", "End 2"): "GND",
     ("PIR (optional)", "VCC"): "5V",
@@ -316,7 +318,7 @@ if pio:
         src.mkdir()
         sketch = read("firmware/desk_gadget.ino")
         all_on, n_opts = re.subn(
-            r"^(#define (?:USE_PIR|USE_BUTTON_NAV|WIFI_LOW_TX_POWER)) 0\b",
+            r"^(#define (?:USE_PIR|USE_ENCODER|WIFI_LOW_TX_POWER)) 0\b",
             r"\1 1", sketch, flags=re.MULTILINE)
         check("all 3 option defines found for the all-options build",
               n_opts == 3, f"matched {n_opts}")

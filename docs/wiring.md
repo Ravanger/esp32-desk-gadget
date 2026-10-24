@@ -18,8 +18,7 @@ double-check every connection against the table, then plug in USB-C.
 > 3.3 V rail. Never connect 5V to 3V3 — the ESP32-C3 power pins are
 > rated 3.6 V maximum. Never feed the 5V pin from another supply while
 > USB is plugged in. Only the PIR uses 5V; everything else goes on
-> 3V3. Two module-specific rules follow from that: the encoder
-> module's "+" pin must be on 3V3 (its pull-up resistors go to "+",
+> 3V3. Two module-specific rules follow from that: if you fit the encoder, its "+" pin must be on 3V3 (its pull-up resistors go to "+",
 > and CLK/DT/SW then swing to that voltage), and the OLED's VCC must
 > be on 3V3 (the module's I2C pull-ups go to VCC).
 
@@ -32,11 +31,13 @@ double-check every connection against the table, then plug in USB-C.
 | DHT11 | VCC | SuperMini 3V3 | The module version includes its own pull-up resistor. 3-pin modules differ in pin order — read the silkscreen; reversed power can destroy the sensor. A bare 4-pin DHT11 needs a 4.7 kΩ resistor between DATA and VCC (see [parts.md](parts.md)). |
 | | GND | SuperMini GND | |
 | | DATA (OUT) | SuperMini GPIO 3 | Digital input; GPIO 3 is also ADC1_CH3, but here it's used digitally. |
-| Rotary encoder | + / VCC | SuperMini 3V3 | All three signal pins use INPUT_PULLUP in code. A module with no "+" pin is a bare encoder — see the bare-encoder wiring below. |
+| Push button | Leg A | SuperMini GPIO 10 | Safe, non-strapping GPIO, INPUT_PULLUP in code — no resistor. On a 4-pin button use diagonally opposite legs (see below). |
+| | Leg B | SuperMini GND | Never 3V3 or 5V. |
+| Rotary encoder (optional) | + / VCC | SuperMini 3V3 | Replaces the push button when `USE_ENCODER` is 1. All three signal pins use INPUT_PULLUP in code. A module with no "+" pin is a bare encoder — see the bare-encoder wiring below. |
 | | GND | SuperMini GND | |
 | | CLK | SuperMini GPIO 6 | |
 | | DT | SuperMini GPIO 7 | |
-| | SW | SuperMini GPIO 10 | Safe, non-strapping GPIO. |
+| | SW | SuperMini GPIO 10 | Same pin as the push button; fit one or the other. |
 | Potentiometer (10K) | End 1 | SuperMini 3V3 | Must be an ADC1 pin: GPIO 1 is ADC1_CH1. Do **not** use GPIO 5 for the pot — GPIO 5 is ADC2, and ADC2 readings are unreliable while WiFi is on. |
 | | Wiper (middle) | SuperMini GPIO 1 | |
 | | End 2 | SuperMini GND | |
@@ -79,6 +80,8 @@ Wrong board — wiring pattern only: this MakerGuides diagram is for an
 ESP32-Lite (SDA 19 / SCL 23). Four wires: GND, 3.3 V, SCL, SDA. On the SuperMini, use
 SDA GPIO 4 / SCL GPIO 5. Diagram: MakerGuides.
 
+**Optional: rotary encoder instead of the button.** Set `USE_ENCODER` to 1 after wiring it.
+
 ![Wiring diagram from LastMinuteEngineers connecting a rotary encoder module to an ESP32](../assets/encoder-wiring.png)
 
 Wrong board — wiring pattern only: the LastMinuteEngineers reference
@@ -95,17 +98,16 @@ LastMinuteEngineers.
 
 ## Bare encoder (no module board)
 
-A bare encoder has three pins on one side (A, C, B) and two switch
+Optional, with `USE_ENCODER` 1. A bare encoder has three pins on one side (A, C, B) and two switch
 terminals on the other. Wire C (common) to GND, A to GPIO 6 (CLK), B
 to GPIO 7 (DT), and the two switch terminals to GPIO 10 and GND.
 Nothing is powered. Optionally add a 10 nF capacitor from each of CLK
 and DT to GND to reduce bounce. If it counts backwards, swap A and B.
 
-## Alternative: push button instead of encoder
+## Push button wiring (4-pin)
 
-Use a 4-pin 6 mm tactile push button in place of the rotary encoder.
-Leave the encoder's CLK and DT pins unconnected (GPIO 6 and 7 are
-unused in this mode).
+Use a 4-pin 6 mm tactile push button for page navigation. This is the default build, so `USE_ENCODER` stays 0.
+GPIO 6 and 7 are unused.
 
 - **Button:** one leg to SuperMini GPIO 10, and the diagonally
   opposite leg to SuperMini GND. The 4 legs form two internally
@@ -116,17 +118,11 @@ unused in this mode).
   only while the button is pressed.
 - **Never** wire the button to 3V3 or 5V. GPIO 10 uses INPUT_PULLUP,
   so no resistor is needed.
-- **Set `USE_BUTTON_NAV` to `1`** in the sketch before uploading (see
-  [libraries-and-setup.md](libraries-and-setup.md)). Each press then
-  steps to the next page: Clock → Indoor → Outdoor → Summary → Clock.
+- **Nothing to change in the sketch**: `USE_ENCODER` stays at its default 0. Each press steps to the next page: Clock → Indoor → Outdoor → Summary → Clock.
 
 ## Swapping the encoder for something else
 
-A tactile button between GPIO 10 and GND (with INPUT_PULLUP) is an
-alternative to the encoder's push button. In the default encoder
-build (`USE_BUTTON_NAV` 0) a press jumps to Summary, and a second
-press returns to Clock; it does not step through pages. For a button
-that steps through pages, see the subsection above. Do NOT wire a
+The push button on GPIO 10 (with INPUT_PULLUP) is the default navigation input; see the push-button section above. In the encoder build (`USE_ENCODER` 1) the same pin is the encoder's SW: a press jumps to Summary, and a second press returns to Clock; it does not step through pages. Do NOT wire a
 button on GPIO 10 at the same time as the encoder's SW pin.
 
 A TTP223 touch module wires VCC→3V3, GND→GND, OUT→GPIO 10. It does

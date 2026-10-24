@@ -16,8 +16,7 @@ SuperMini GPIOs. Power off before changing any wiring (the one exception is the 
 - [ ] No 5 V wire touches a GPIO pin or the 3V3 pin. The only 5 V
       connection in the whole build is the optional PIR VCC, and only
       after the base build works.
-- [ ] OLED VCC is on 3V3, not 5V. DHT11 VCC is on 3V3. Encoder power
-      is on 3V3. Pot ends are on 3V3 and GND.
+- [ ] OLED VCC is on 3V3, not 5V. DHT11 VCC is on 3V3. Encoder power (if fitted) is on 3V3. Pot ends are on 3V3 and GND.
 - [ ] No GPIO 2, 8, or 9 is wired to anything. GPIO 20/21 are left free.
 
 ## Stage 1 — Power and OLED
@@ -37,11 +36,10 @@ SuperMini GPIOs. Power off before changing any wiring (the one exception is the 
       the regulator rating of your board (which varies by clone). Measured idle:
       ______ mA, peak during fetch: ______ mA
 
-## Stage 2 — Clock (NTP) and encoder (or button)
+## Stage 2 — Clock (NTP) and button (or encoder)
 
-The encoder (or button) is tested here, before the indoor and outdoor stages,
-because those stages need you to rotate (or press, in button
-mode) to their pages.
+The button (or encoder) is tested here, before the indoor and outdoor stages,
+because those stages need you to press (or rotate) to their pages.
 
 - [ ] Serial Monitor shows "WiFi: connecting..." then
       "WiFi: connected" on a 2.4 GHz network (the ESP32-C3 has no
@@ -53,17 +51,16 @@ mode) to their pages.
 - [ ] After a power cycle, the clock resyncs on its own — no
       button press, no re-upload. (It shows `--:--` until the first
       NTP sync and never blocks the display.)
-- [ ] Encoder build: rotate the encoder: pages change in order Clock → Indoor →
-      Outdoor → Summary, and back the other way when rotated the
-      other way. If it counts backwards, swap CLK/DT (GPIO 6/7).
-- [ ] Encoder build: press the encoder: the display jumps to the Summary page;
-      press again: back to Clock. A press does not step through
-      pages, and holding it down does not re-trigger.
-- [ ] Button-mode build only (`USE_BUTTON_NAV` 1, no encoder): each
-      press steps the pages in order, Clock → Indoor → Outdoor →
-      Summary, then wraps back to Clock. Holding the button down does
-      not repeat the step. One press is exactly one page step: no
-      double steps and no skipped pages.
+- [ ] Button (the default build): each press steps the pages in order,
+      Clock → Indoor → Outdoor → Summary, then wraps back to Clock.
+      Holding the button down does not repeat the step. One press is
+      exactly one page step: no double steps and no skipped pages.
+- [ ] Encoder build (`USE_ENCODER` 1): rotate the encoder: pages change in
+      order Clock → Indoor → Outdoor → Summary, and back the other way
+      when rotated the other way. If it counts backwards, swap CLK/DT (GPIO 6/7).
+- [ ] Encoder build (`USE_ENCODER` 1): press the encoder: the display jumps
+      to the Summary page; press again: back to Clock. A press does not
+      step through pages, and holding it down does not re-trigger.
 
 ## Stage 3 — Indoor (DHT11)
 
@@ -89,8 +86,7 @@ mode) to their pages.
       (the first fetch runs as soon as WiFi is up, then every 10
       minutes after a success and every 60 s after a failure). A
       failing fetch typically blocks for a few seconds and at worst
-      about 12 s plus DNS lookup time, so encoder or button input during
-      a fetch is missed. The page shows "Updated N min ago".
+      about 12 s plus DNS lookup time, so button or encoder input during a fetch is missed. The page shows "Updated N min ago".
 - [ ] Temperature, humidity, condition, and wind match Open-Meteo
       for the configured location when the same URL from
       [how-it-works.md](how-it-works.md) is opened in a browser.
@@ -129,7 +125,7 @@ mode) to their pages.
       power-up: the HC-SR501 triggers spuriously until it settles.
 - [ ] Wave at it: display on. Leave the room: the display
       blanks 60 s after the PIR's output drops (see [how-it-works.md](how-it-works.md#optional-pir-sleep)).
-      Turning or pressing the encoder (or pressing the button in button mode) also wakes it.
+      Pressing the button (or turning or pressing the encoder) also wakes it.
 
 ## If a stage fails
 
