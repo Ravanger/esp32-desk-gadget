@@ -27,7 +27,8 @@ conflicts with a general instruction, this file wins for this repo.
   | OLED SDA | 4 |
   | OLED SCL | 5 |
   | DHT11 DATA | 3 |
-  | Encoder CLK / DT / SW | 6 / 7 / 10 |
+  | Nav push button (also encoder SW) | 10 |
+  | Encoder CLK / DT (optional) | 6 / 7 |
   | Potentiometer wiper | 1 (ADC1_CH1) |
   | PIR OUT (optional) | 0 |
 

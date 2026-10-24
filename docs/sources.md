@@ -14,7 +14,7 @@ resolution used in this project is noted.
   <https://www.makerguides.com/simple-esp32-internet-weather-station/>
 - **Instructables — ESP32 and OLED Display: Internet Clock (DHT22).**
   The one-display, multiple-pages concept; the original's page
-  selector was a potentiometer, replaced here by a rotary encoder.
+  selector was a potentiometer, replaced here by a push button (or an optional rotary encoder).
   <https://www.instructables.com/id/ESP32-and-OLED-Display-Internet-Clock-DHT22/>
 - **LastMinuteEngineers — ESP32 Rotary Encoder Tutorial.**
   Quadrature CLK/DT phase relationship, polling vs interrupt decode

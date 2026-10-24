@@ -40,12 +40,13 @@ const char* TIMEZONE_POSIX = "EST5EDT,M3.2.0,M11.1.0";
 #define OLED_SDA 4   // I2C via GPIO matrix; NOT GPIO 8 (strapping + onboard LED)
 #define OLED_SCL 5   // NOT GPIO 9 (strapping + BOOT button)
 #define DHT_PIN 3
-#define ENC_CLK 6
+#define BUTTON_PIN 10  // nav push button to GND; with USE_ENCODER 1 this is the encoder's SW pin
+#define ENC_CLK 6     // optional, only if USE_ENCODER is 1
 #define ENC_DT 7
-#define ENC_SW 10
 #define POT_PIN 1    // ADC1_CH1. Do NOT use GPIO 5 (ADC2) for the pot: ADC2 is unreliable while WiFi is on.
 #define PIR_PIN 0    // optional, only if USE_PIR is 1; GPIO 0-5 are RTC GPIOs
 #define USE_PIR 0    // set to 1 after wiring the PIR
+#define USE_ENCODER 0  // set to 1 after wiring a rotary encoder (CLK 6, DT 7, SW 10) instead of the button
 
 // ---------- Weather: Open-Meteo (no key), URL built from config ----------
 String weatherUrl() {
@@ -72,14 +73,16 @@ bool weatherOK = false;
 int contrast = 200;  // current OLED contrast 0-255
 unsigned long lastDHT = 0, lastDraw = 0, lastPot = 0;
 unsigned long lastWeatherTry = 0, lastWeatherOk = 0, lastStep = 0;
-unsigned long lastBtn = 0, bootMs = 0;
+unsigned long lastSwChange = 0, bootMs = 0;
 bool weatherTried = false, lastFetchOk = false;
 const time_t MIN_VALID_EPOCH = 1700000000;  // time(nullptr) below this means NTP has not synced
 #if USE_PIR
 unsigned long lastMotion = 0;
 #endif
+#if USE_ENCODER
 int lastCLK;
-int lastSw = HIGH;  // previous encoder-button state, for edge detection
+#endif
+int lastSw = HIGH;
 
 // ---------- WMO weather code -> text ----------
 const char* codeText(int c) {
@@ -284,10 +287,12 @@ void setup() {
   display.display();
   setContrast(contrast);
   dht.begin();
+  pinMode(BUTTON_PIN, INPUT_PULLUP);
+#if USE_ENCODER
   pinMode(ENC_CLK, INPUT_PULLUP);
   pinMode(ENC_DT, INPUT_PULLUP);
-  pinMode(ENC_SW, INPUT_PULLUP);
   lastCLK = digitalRead(ENC_CLK);
+#endif
 #if USE_PIR
   pinMode(PIR_PIN, INPUT_PULLDOWN);
 #endif
@@ -323,6 +328,7 @@ void setup() {
 void loop() {
   unsigned long now = millis();
 
+#if USE_ENCODER
   // --- Encoder rotation (polling: watch CLK, read DT for direction) ---
   int clk = digitalRead(ENC_CLK);
   if (clk != lastCLK && clk == LOW && now - lastStep >= 3) {  // CLK falling edge = one detent; 3 ms bounce guard
@@ -338,15 +344,22 @@ void loop() {
     drawPage();
   }
   lastCLK = clk;
+#endif
 
-  // --- Encoder press (edge-triggered, 200 ms guard): jump to/from summary ---
-  // Act only on the HIGH -> LOW transition, so holding the button
-  // down does NOT re-trigger every 200 ms. A press jumps to Summary;
-  // a second press returns to Clock. It does not step through pages.
-  int sw = digitalRead(ENC_SW);
-  if (sw == LOW && lastSw == HIGH && now - lastBtn > 200) {
-    lastBtn = now;
+  // --- Press: button build steps to the next page, encoder build jumps to/from Summary ---
+  int sw = digitalRead(BUTTON_PIN);
+  bool pressed = false;
+  if (sw != lastSw) {
+    // Count a press only if the line was HIGH >= 30 ms, so contact bounce under 30 ms on press or release is ignored.
+    pressed = (sw == LOW && now - lastSwChange >= 30);
+    lastSwChange = now;
+  }
+  if (pressed) {
+#if USE_ENCODER
     page = (page == 3) ? 0 : 3;
+#else
+    page = (page + 1) % 4;
+#endif
 #if USE_PIR
     lastMotion = now;
 #endif

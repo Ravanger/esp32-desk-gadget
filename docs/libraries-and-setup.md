@@ -97,6 +97,7 @@ All configuration is in one block at the top of the sketch:
    recommendation. It lowers radiated power, not a guaranteed fix for an
    undersized regulator: Espressif does not publish the TX current at
    8.5 dBm, so measure with a USB meter.
+5. **Navigation input** — `USE_ENCODER` (default 0). Leave it at 0 for the push button, which steps to the next page on each press. Set it to 1 if a rotary encoder is wired instead of the button (CLK 6, DT 7, SW 10): rotate to change pages, press to jump to Summary and back. See [wiring.md](wiring.md).
 
 The values shipped in the sketch are an example configuration; replace
 them with the target location before use. Nothing else in the sketch

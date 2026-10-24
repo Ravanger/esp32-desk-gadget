@@ -200,7 +200,7 @@ here too.
   Source: Aosong DHT22 datasheet summaries (unverified: no primary datasheet
   URL has been confirmed). Checked 2026-10-23.
 
-## Rotary encoder module (KY-040 style)
+## Rotary encoder module (KY-040 style, optional)
 
 - CLK = channel A, DT = channel B, SW = push button to GND (active LOW when
   pressed). The module has pull-ups on CLK and DT that go to its `+` pin, so
@@ -234,10 +234,10 @@ here too.
 
 ## TTP223 touch module (optional)
 
-- A default-configuration TTP223 does not behave like the encoder button
+- A default-configuration TTP223 does not behave like the navigation button
   (between GPIO 10 and GND with INPUT_PULLUP, active LOW when pressed), and
   there is no TTP223 code path in the sketch. Do not wire a TTP223 as a
-  drop-in for the encoder button without one of the fixes below.
+  drop-in for the navigation button without one of the fixes below.
 - Factory default (both jumpers unsoldered) is momentary active-HIGH:
   OUT HIGH on touch, LOW when released. The sketch's button logic expects
   LOW when pressed, so a default TTP223 will read exactly backwards.
@@ -346,9 +346,9 @@ Result, 2026-10-24: SUCCESS with no sketch warnings under `-Wall` (PlatformIO pl
 espressif32 6.9.0 = arduino-esp32 2.0.17, board `esp32-c3-devkitm-1`, the
 pinned library versions above): RAM 12.4% (40,508 / 327,680 bytes), Flash
 about 938 KB (71.6% of 1,310,720 bytes; the exact figure varies by a few
-hundred bytes with library resolution). The default configuration compiles.
-`USE_PIR=1` with `WIFI_LOW_TX_POWER=1` was compile-verified manually on
-2026-10-24 (scripts/check.py compiles the default configuration only).
+hundred bytes with library resolution). scripts/check.py compiles two
+configurations: the default, and every option define (`USE_PIR`,
+`USE_ENCODER`, `WIFI_LOW_TX_POWER`) set to 1; both compile.
 Latest stable arduino-esp32 as checked 2026-10-24: 3.3.12 (released
 2026-09-18); core 3.x is not compile-verified here.
 

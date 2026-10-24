@@ -9,14 +9,14 @@ a 0.96-inch SSD1306 OLED. It shows:
   (free, no API key, no account)
 - A summary screen with brightness, WiFi status, and uptime
 
-Navigation is a rotary encoder (rotate to change pages, press to toggle
-between the summary and the clock). A separate analog potentiometer controls screen
+Navigation is one push button: each press steps to the next page (Clock → Indoor → Outdoor → Summary → Clock). An optional rotary encoder can replace the button (`USE_ENCODER` 1: rotate to change pages, press to jump to the summary and back to the clock).
+A separate analog potentiometer controls screen
 brightness. Power is USB-C; no host software is required at runtime —
 the host computer only supplies power. Uploading the sketch still
 needs the Arduino IDE or PlatformIO.
 
 > **Board:** ESP32-C3 SuperMini. All pin numbers in this repository
-> are SuperMini pins (I2C on GPIO 4/5, encoder on 6/7/10, pot on ADC1
+> are SuperMini pins (I2C on GPIO 4/5, button on GPIO 10 (encoder on 6/7/10 if fitted), pot on ADC1
 > GPIO 1). Pin numbers from classic ESP32 guides (21/22, 25/26/27, 34)
 > do not apply to this board — see [docs/wiring.md](docs/wiring.md).
 
@@ -49,8 +49,7 @@ are blank until someone records them.
 ## Hardware
 
 See [docs/parts.md](docs/parts.md) for the full list. In short:
-ESP32-C3 SuperMini, SSD1306 128×64 I2C OLED, DHT11 module, rotary
-encoder module, 10K potentiometer, breadboard, jumper wires, and a
+ESP32-C3 SuperMini, SSD1306 128×64 I2C OLED, DHT11 module, tactile push button (or an optional rotary encoder module), 10K potentiometer, breadboard, jumper wires, and a
 USB-C data cable (not a charge-only cable).
 
 ## Getting started
@@ -59,8 +58,7 @@ USB-C data cable (not a charge-only cable).
 2. [Wiring](docs/wiring.md) — wiring table, including the I2C-pin warning
 3. [Libraries & setup](docs/libraries-and-setup.md) — Arduino IDE and
    PlatformIO, plus configuration (WiFi, location, time zone)
-4. [How it works](docs/how-it-works.md) — NTP clock, DHT11, Open-Meteo,
-   encoder, dimming
+4. [How it works](docs/how-it-works.md) — NTP clock, DHT11, Open-Meteo, button and optional encoder, dimming
 5. [Build order](docs/build-order.md) — staged build, with a test after
    each stage
 6. [Hardware tests](docs/hardware-tests.md) — bench checklist with
