@@ -100,10 +100,14 @@ conflicts with a general instruction, this file wins for this repo.
 
 ## Local checks and hooks
 
-There is no hosted CI (private repo, GitHub Actions is metered).
+There is no hosted CI (private repo, GitHub Actions is metered), and
+no server-side branch protection (GitHub Free private repos cannot
+enable rulesets or protected branches). The hooks below are the only
+enforcement, so they must be enabled in every clone.
 
 - One-time setup: `git config core.hooksPath .githooks`
-- pre-commit runs `scripts/check.py --quick` (no compile).
+- pre-commit refuses commits on `main`/`master`, then runs
+  `scripts/check.py --quick` (no compile).
 - pre-push runs the full `scripts/check.py` and blocks pushes to
   `main`/`master`.
 - Never bypass hooks with `--no-verify`.

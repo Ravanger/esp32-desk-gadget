@@ -1,6 +1,11 @@
 #!/bin/sh
 # Quick guardrail checks before every commit. Enable once with:
 #   git config core.hooksPath .githooks
+case "$(git symbolic-ref --short -q HEAD)" in
+  main|master)
+    echo "pre-commit: refusing to commit on main/master. Create a feature branch and open a pull request." >&2
+    exit 1 ;;
+esac
 root=$(git rev-parse --show-toplevel) || exit 1
 cd "$root" || exit 1
 PY=
