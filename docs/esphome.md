@@ -1,12 +1,13 @@
-# ESPHome firmware (Home Assistant alternative)
+# ESPHome firmware (default)
 
 This page covers the ESPHome firmware in
-[esphome/desk_gadget.yaml](../esphome/desk_gadget.yaml). It is an
-alternative to the Arduino sketch in
-[firmware/desk_gadget.ino](../firmware/desk_gadget.ino), not a
-replacement for it. The sketch stays the recommended build: it runs
-standalone, with no Home Assistant dependency. Use the ESPHome build
-when the gadget should live in Home Assistant.
+[esphome/desk_gadget.yaml](../esphome/desk_gadget.yaml), the default
+firmware for the gadget. It makes the gadget a Home Assistant device
+and needs a running Home Assistant for outdoor weather. If you do not
+run Home Assistant, use the standalone Arduino sketch in
+[firmware/desk_gadget.ino](../firmware/desk_gadget.ino) instead (see
+[libraries-and-setup.md](libraries-and-setup.md)); it fetches weather
+from Open-Meteo itself.
 
 Wiring does not change. The pin assignment, the build order in
 [build-order.md](build-order.md), and the bench checklist in
@@ -36,8 +37,8 @@ the device and are not re-exported back to Home Assistant.
 
 1. Install ESPHome (the dashboard add-on, or `pip install esphome`
    on a computer with USB access to the board). The YAML needs
-   ESPHome 2024.6.0 or newer, because it uses the list form of
-   `ota:` (`platform: esphome`); `min_version` enforces this.
+   ESPHome 2026.10.0 or newer, the release it is compiled and checked
+   against; `min_version` enforces this.
 2. Copy [secrets.example.yaml](../esphome/secrets.example.yaml) to
    `esphome/secrets.yaml` in the same directory and fill it in.
    `secrets.yaml` is gitignored and must never be committed.
@@ -71,10 +72,9 @@ the device and are not re-exported back to Home Assistant.
    esphome config esphome/desk_gadget.yaml
    ```
    This needs `esphome/secrets.yaml` to exist with real values (the
-   example placeholders are refused on purpose). Recent ESPHome
-   releases warn that an OTA password costs flash and RAM and
-   suggest encryption instead. The warning is expected: the password
-   is kept so the YAML still works from ESPHome 2024.6.0.
+   example placeholders are refused on purpose). Over-the-air
+   updates are encrypted with the same `api_key`, so there is no
+   separate OTA password to set.
 5. Flash it:
    ```
    esphome run esphome/desk_gadget.yaml
@@ -230,4 +230,4 @@ Validation status: see the ESPHome entry under
 
 ---
 
-[← Previous: Verified specifications](verified-specs.md) · [Contents](../README.md)
+[← Previous: Wiring](wiring.md) · [Contents](../README.md) · [Next: Libraries & setup →](libraries-and-setup.md)

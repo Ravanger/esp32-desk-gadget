@@ -369,10 +369,10 @@ default (button) build: RAM 34.1% (109,584 / 321,296 bytes), flash
 `reboot_timeout: 0s`), 2026-10-24: `esphome config` passes and the
 default build compiles (ESP-IDF 5.5.6). With the 5-read indoor
 moving average added, same day: RAM 34.3% (110,072 / 321,296 bytes),
-flash 54.2% (993,802 / 1,835,008 bytes). The YAML needs ESPHome 2024.6.0
-or newer (list-form `ota:`). ESPHome 2026.10.0 warns that an OTA
-`password` costs flash and RAM and recommends OTA `encryption`,
-which needs a newer ESPHome; the password is kept for now.
+flash 54.2% (993,802 / 1,835,008 bytes). With `min_version: 2026.10.0`
+and OTA `encryption` (inheriting the API key) replacing the OTA
+password, same day: compiles with no warnings, RAM 34.2% (110,040 /
+321,296 bytes), flash 54.1% (992,688 / 1,835,008 bytes).
 
 ## What this audit could NOT verify
 
@@ -399,4 +399,4 @@ which needs a newer ESPHome; the password is kept for now.
 
 ---
 
-[← Previous: Sources & credits](sources.md) · [Contents](../README.md) · [Next: ESPHome →](esphome.md)
+[← Previous: Sources & credits](sources.md) · [Contents](../README.md)

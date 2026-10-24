@@ -10,6 +10,15 @@ All voltages are measured with the board powered over USB-C and a
 multimeter, black lead on a SuperMini GND pin. All pins are
 SuperMini GPIOs. Power off before changing any wiring (the one exception is the DHT11 data-wire test in stage 3).
 
+> **Firmware:** the steps below are written for the Arduino sketch
+> (Serial Monitor at 115200 baud, `USE_ENCODER` / `USE_PIR`, re-upload).
+> With the default ESPHome build the wiring order and the on-screen
+> results are the same: set `use_encoder` / `use_pir` in the YAML
+> instead of the defines, reflash with `esphome run`, and read the
+> log with `esphome logs` instead of the Serial Monitor. The log
+> lines differ from the sketch's (see [esphome.md](esphome.md)), and
+> the outdoor stage needs the device added in Home Assistant.
+
 ## Stage 0 — Unpowered checks
 
 - [ ] Every wire matches [wiring.md](wiring.md), checked twice.

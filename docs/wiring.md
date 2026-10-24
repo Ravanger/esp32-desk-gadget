@@ -160,4 +160,4 @@ bare wire or foil pad.
 
 ---
 
-[← Previous: Parts](parts.md) · [Contents](../README.md) · [Next: Libraries & setup →](libraries-and-setup.md)
+[← Previous: Parts](parts.md) · [Contents](../README.md) · [Next: ESPHome →](esphome.md)

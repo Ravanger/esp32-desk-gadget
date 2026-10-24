@@ -136,7 +136,10 @@ All checked 2026-10-24. Figures taken from them are listed in
   `components/dht/dht.cpp` publishes NaN on a failed read;
   `components/homeassistant/sensor` publishes NaN on an unparsable
   state; `components/wifi` default `reboot_timeout` 15 min;
-  list-form `ota:` from 2024.6.0, `12db` attenuation from 2024.5.0;
+  OTA `encryption` with no key inherits the `api` key and cannot be
+  combined with an OTA `password` (`components/esphome/ota`);
+  `sliding_window_moving_average` averages the non-NaN values in a
+  window that fills from the first value (`components/sensor`);
   `filter_out` matches NaN; font text anchored at the ascender
   unless a `TextAlign` is given). Checked 2026-10-24:
   <https://github.com/esphome/esphome/tree/2026.10.0/esphome/components>

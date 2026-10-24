@@ -362,7 +362,7 @@ else:
     print("[skip] compile check — PlatformIO (pio) not found; "
           "install it and re-run to include the compile check")
 
-# --- 13. ESPHome alternative -------------------------------------------
+# --- 13. ESPHome (default firmware) -------------------------------------
 esphome_yaml = ROOT / "esphome" / "desk_gadget.yaml"
 check("ESPHome YAML exists", esphome_yaml.exists())
 if esphome_yaml.exists():
@@ -402,8 +402,8 @@ if esphome_yaml.exists():
         shutil.copy(esphome_yaml, work / "desk_gadget.yaml")
         (work / "secrets.yaml").write_text(
             'wifi_ssid: "check"\nwifi_password: "check-password"\n'
-            f'api_key: "{base64.b64encode(os.urandom(32)).decode()}"\n'
-            'ota_password: "check"\n', encoding="utf-8")
+            f'api_key: "{base64.b64encode(os.urandom(32)).decode()}"\n',
+            encoding="utf-8")
         proc = subprocess.run(
             [esphome_bin, "config", str(work / "desk_gadget.yaml")],
             cwd=ROOT, capture_output=True, text=True, timeout=300)

@@ -7,6 +7,8 @@
 // (core 3.x, CDC on by default) is untested.
 // OLED SSD1306 128x64 I2C (0x3C) | button pages (optional encoder) | pot dimming
 // Weather: Open-Meteo (no API key). Time: NTP, configurable zone.
+// Standalone backup to the default ESPHome firmware (esphome/desk_gadget.yaml):
+// use this sketch if you do not run Home Assistant.
 // See README.md and docs/ in this repo for wiring and build order.
 // Pins are SuperMini-specific: I2C on GPIO 4/5 (NOT the risky
 // strapping pins GPIO 8/9), button on 10 (optional encoder on 6/7/10),

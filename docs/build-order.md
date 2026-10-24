@@ -9,6 +9,15 @@ stage 0 (unpowered checks), stage 6 here (leave it running) has no test
 page there, and the PIR is stage 7 here but stage 6 there. Total
 wiring is only ~15 jumpers, so this goes fast.
 
+> **Firmware:** the steps below are written for the Arduino sketch
+> (Serial Monitor at 115200 baud, `USE_ENCODER` / `USE_PIR`, re-upload).
+> With the default ESPHome build the wiring order and the on-screen
+> results are the same: set `use_encoder` / `use_pir` in the YAML
+> instead of the defines, reflash with `esphome run`, and read the
+> log with `esphome logs` instead of the Serial Monitor. The log
+> lines differ from the sketch's (see [esphome.md](esphome.md)), and
+> the outdoor stage needs the device added in Home Assistant.
+
 1. **OLED only.** Wire just the display (4 wires: SDA GPIO 4, SCL
    GPIO 5, [wiring.md](wiring.md)) and upload the full sketch; it works
    for bring-up with nothing else connected. This deliberately replaces

@@ -1,4 +1,5 @@
-# ESP32 Desk Gadget — ESPHome firmware (alternative to firmware/desk_gadget.ino)
+# ESP32 Desk Gadget — ESPHome firmware (default; firmware/desk_gadget.ino
+# is the standalone Arduino backup)
 #
 # Same hardware, same wiring, same four screens as the Arduino sketch:
 # Clock, Indoor (DHT11), Outdoor (weather), Summary. The difference is
@@ -8,8 +9,8 @@
 #   to Home Assistant over the native ESPHome API (no MQTT broker).
 # - Outdoor weather is imported FROM Home Assistant (a weather entity
 #   you already have), instead of fetched from Open-Meteo on the
-#   device. The Arduino sketch stays the recommended build if you want
-#   a standalone gadget with no Home Assistant dependency.
+#   device. Use the Arduino sketch instead for a standalone gadget
+#   with no Home Assistant dependency.
 #
 # Pins are the frozen SuperMini assignment from AGENTS.md and the
 # sketch. Do not renumber them here without changing the sketch,
@@ -52,8 +53,9 @@ esphome:
   friendly_name: ${friendly_name}
   # Stable entity names in Home Assistant (no MAC suffix appended).
   name_add_mac_suffix: false
-  # The list form of `ota:` (platform: esphome) needs 2024.6.0.
-  min_version: 2024.6.0
+  # The release this YAML is compiled and checked against (OTA
+  # encryption needs a recent release).
+  min_version: 2026.10.0
   # Like the sketch's setup(): with a PIR, the display blanks 60 s
   # after boot unless motion or a press arrives first.
   on_boot:
@@ -92,9 +94,11 @@ api:
   # running when WiFi is down.
   reboot_timeout: 0s
 
+# OTA updates use the same encryption key as the API (no key here
+# means "inherit api_key"), so there is no separate OTA password.
 ota:
   - platform: esphome
-    password: !secret ota_password
+    encryption: {}
 
 time:
   - platform: sntp
