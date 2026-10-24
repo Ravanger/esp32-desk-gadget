@@ -10,7 +10,9 @@ a 0.96-inch SSD1306 OLED. It shows:
 - A summary screen with brightness, WiFi status, and uptime
 
 Navigation is a rotary encoder (rotate to change pages, press to toggle
-between the summary and the clock). A separate analog potentiometer controls screen
+between the summary and the clock). A push button can replace the
+encoder instead (`USE_BUTTON_NAV` 1: each press steps to the next page).
+A separate analog potentiometer controls screen
 brightness. Power is USB-C; no host software is required at runtime —
 the host computer only supplies power. Uploading the sketch still
 needs the Arduino IDE or PlatformIO.

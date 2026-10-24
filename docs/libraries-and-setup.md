@@ -97,6 +97,10 @@ All configuration is in one block at the top of the sketch:
    recommendation. It lowers radiated power, not a guaranteed fix for an
    undersized regulator: Espressif does not publish the TX current at
    8.5 dBm, so measure with a USB meter.
+5. **Navigation input** — `USE_BUTTON_NAV` (default 0). Leave it at 0
+   for the rotary encoder. Set it to 1 if a push button on GPIO 10
+   replaces the encoder: each press then steps to the next page. See
+   [wiring.md](wiring.md#alternative-push-button-instead-of-encoder).
 
 The values shipped in the sketch are an example configuration; replace
 them with the target location before use. Nothing else in the sketch

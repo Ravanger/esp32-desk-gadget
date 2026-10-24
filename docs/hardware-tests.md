@@ -58,6 +58,11 @@ because those stages need you to rotate to their pages.
 - [ ] Press the encoder: the display jumps to the Summary page;
       press again: back to Clock. A press does not step through
       pages, and holding it down does not re-trigger.
+- [ ] Button-mode build only (`USE_BUTTON_NAV` 1, no encoder): each
+      press steps the pages in order, Clock → Indoor → Outdoor →
+      Summary, then wraps back to Clock. Holding the button down does
+      not repeat the step. One press is exactly one page step: no
+      double steps and no skipped pages.
 
 ## Stage 3 — Indoor (DHT11)
 
@@ -123,7 +128,7 @@ because those stages need you to rotate to their pages.
       power-up: the HC-SR501 triggers spuriously until it settles.
 - [ ] Wave at it: display on. Leave the room: the display
       blanks 60 s after the PIR's output drops (see [how-it-works.md](how-it-works.md#optional-pir-sleep)).
-      Turning or pressing the encoder also wakes it.
+      Turning or pressing the encoder (or pressing the button in button mode) also wakes it.
 
 ## If a stage fails
 

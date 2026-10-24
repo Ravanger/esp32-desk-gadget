@@ -214,11 +214,20 @@ Two ways to read it, both covered by the LastMinuteEngineers tutorial:
 Three practical details: the pins are configured INPUT_PULLUP (the
 signals are mechanical switches to GND: HIGH open, LOW closed);
 the push button is edge-triggered (it acts only on the HIGH→LOW
-transition, with a 200 ms guard, so holding it down does not
-re-trigger — a press jumps to Summary, a second press returns to
+transition, and a press counts only if the line was released for at
+least 30 ms, so contact bounce and holding it down do not re-trigger
+— in encoder mode a press jumps to Summary, a second press returns to
 Clock, it never steps through pages); and if the knob counts
 backwards, just swap the CLK and DT wires (or swap the two pin
 numbers in code). Both are equally correct fixes.
+
+**Button mode (`USE_BUTTON_NAV` 1).** The encoder is not read at all,
+and GPIO 6 and 7 are unused. A push button between GPIO 10 and GND
+steps through the pages in order, Clock → Indoor → Outdoor → Summary
+→ Clock, one step per press. Holding the button does not repeat, and
+bounce is ignored by the same 30 ms rule. With `USE_PIR` 1, a press
+also wakes the display. See
+[wiring.md](wiring.md#alternative-push-button-instead-of-encoder).
 
 ## Dimming — there is no backlight to dim
 

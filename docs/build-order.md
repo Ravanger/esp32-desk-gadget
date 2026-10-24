@@ -40,7 +40,9 @@ wiring is only ~15 jumpers, so this goes fast.
      "WiFi: connection failed (30 s timeout)". Turning the knob
      cycles pages 1→2→3→4→1, the other way goes backwards, and a
      press jumps to Summary and back to Clock — a press does not
-     step through pages. Counts backwards? Swap CLK and DT — that's
+     step through pages (button alternative: `USE_BUTTON_NAV` 1, see
+     [wiring.md](wiring.md#alternative-push-button-instead-of-encoder)).
+     Counts backwards? Swap CLK and DT — that's
      a fix, not a failure. Double-steps or missed steps? See the
      "Encoder double-steps or skips" row in
      [troubleshooting.md](troubleshooting.md).

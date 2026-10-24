@@ -46,6 +46,7 @@ const char* TIMEZONE_POSIX = "EST5EDT,M3.2.0,M11.1.0";
 #define POT_PIN 1    // ADC1_CH1. Do NOT use GPIO 5 (ADC2) for the pot: ADC2 is unreliable while WiFi is on.
 #define PIR_PIN 0    // optional, only if USE_PIR is 1; GPIO 0-5 are RTC GPIOs
 #define USE_PIR 0    // set to 1 after wiring the PIR
+#define USE_BUTTON_NAV 0  // 1 = push button on ENC_SW (GPIO 10) instead of the encoder; each press = next page
 
 // ---------- Weather: Open-Meteo (no key), URL built from config ----------
 String weatherUrl() {
@@ -72,14 +73,16 @@ bool weatherOK = false;
 int contrast = 200;  // current OLED contrast 0-255
 unsigned long lastDHT = 0, lastDraw = 0, lastPot = 0;
 unsigned long lastWeatherTry = 0, lastWeatherOk = 0, lastStep = 0;
-unsigned long lastBtn = 0, bootMs = 0;
+unsigned long lastSwChange = 0, bootMs = 0;
 bool weatherTried = false, lastFetchOk = false;
 const time_t MIN_VALID_EPOCH = 1700000000;  // time(nullptr) below this means NTP has not synced
 #if USE_PIR
 unsigned long lastMotion = 0;
 #endif
+#if !USE_BUTTON_NAV
 int lastCLK;
-int lastSw = HIGH;  // previous encoder-button state, for edge detection
+#endif
+int lastSw = HIGH;
 
 // ---------- WMO weather code -> text ----------
 const char* codeText(int c) {
@@ -284,10 +287,12 @@ void setup() {
   display.display();
   setContrast(contrast);
   dht.begin();
+  pinMode(ENC_SW, INPUT_PULLUP);
+#if !USE_BUTTON_NAV
   pinMode(ENC_CLK, INPUT_PULLUP);
   pinMode(ENC_DT, INPUT_PULLUP);
-  pinMode(ENC_SW, INPUT_PULLUP);
   lastCLK = digitalRead(ENC_CLK);
+#endif
 #if USE_PIR
   pinMode(PIR_PIN, INPUT_PULLDOWN);
 #endif
@@ -323,6 +328,7 @@ void setup() {
 void loop() {
   unsigned long now = millis();
 
+#if !USE_BUTTON_NAV
   // --- Encoder rotation (polling: watch CLK, read DT for direction) ---
   int clk = digitalRead(ENC_CLK);
   if (clk != lastCLK && clk == LOW && now - lastStep >= 3) {  // CLK falling edge = one detent; 3 ms bounce guard
@@ -338,15 +344,22 @@ void loop() {
     drawPage();
   }
   lastCLK = clk;
+#endif
 
-  // --- Encoder press (edge-triggered, 200 ms guard): jump to/from summary ---
-  // Act only on the HIGH -> LOW transition, so holding the button
-  // down does NOT re-trigger every 200 ms. A press jumps to Summary;
-  // a second press returns to Clock. It does not step through pages.
+  // --- Button press: encoder build jumps to/from Summary, button build steps to the next page ---
   int sw = digitalRead(ENC_SW);
-  if (sw == LOW && lastSw == HIGH && now - lastBtn > 200) {
-    lastBtn = now;
+  bool pressed = false;
+  if (sw != lastSw) {
+    // Count a press only if the line was HIGH >= 30 ms, so contact bounce on press or release never re-triggers.
+    pressed = (sw == LOW && now - lastSwChange >= 30);
+    lastSwChange = now;
+  }
+  if (pressed) {
+#if USE_BUTTON_NAV
+    page = (page + 1) % 4;
+#else
     page = (page == 3) ? 0 : 3;
+#endif
 #if USE_PIR
     lastMotion = now;
 #endif

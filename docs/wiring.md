@@ -101,13 +101,33 @@ to GPIO 7 (DT), and the two switch terminals to GPIO 10 and GND.
 Nothing is powered. Optionally add a 10 nF capacitor from each of CLK
 and DT to GND to reduce bounce. If it counts backwards, swap A and B.
 
+## Alternative: push button instead of encoder
+
+Use a 4-pin 6 mm tactile push button in place of the rotary encoder.
+Leave the encoder's CLK and DT pins unconnected (GPIO 6 and 7 are
+unused in this mode).
+
+- **Button:** one leg to SuperMini GPIO 10, and the diagonally
+  opposite leg to SuperMini GND. The 4 legs form two internally
+  connected pairs; using one leg from each pair means the connection
+  always goes through the switch. Adjacent legs may be permanently
+  connected, which would make the button read as always pressed.
+- **Confirm it** with a multimeter in continuity mode: continuity
+  only while the button is pressed.
+- **Never** wire the button to 3V3 or 5V. GPIO 10 uses INPUT_PULLUP,
+  so no resistor is needed.
+- **Set `USE_BUTTON_NAV` to `1`** in the sketch before uploading (see
+  [libraries-and-setup.md](libraries-and-setup.md)). Each press then
+  steps to the next page: Clock → Indoor → Outdoor → Summary → Clock.
+
 ## Swapping the encoder for something else
 
 A tactile button between GPIO 10 and GND (with INPUT_PULLUP) is an
-alternative to the encoder's push button — but a press jumps to
-Summary, and a second press returns to Clock; it does not step
-through pages. Do NOT wire a button on GPIO 10 at the same time as
-the encoder's SW pin.
+alternative to the encoder's push button. In the default encoder
+build (`USE_BUTTON_NAV` 0) a press jumps to Summary, and a second
+press returns to Clock; it does not step through pages. For a button
+that steps through pages, see the subsection above. Do NOT wire a
+button on GPIO 10 at the same time as the encoder's SW pin.
 
 A TTP223 touch module wires VCC→3V3, GND→GND, OUT→GPIO 10. It does
 not behave like that button out of the box: a default TTP223 (both
