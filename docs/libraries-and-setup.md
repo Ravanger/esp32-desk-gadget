@@ -26,8 +26,19 @@ Arduino-framework ESP32 either way.
 | ArduinoJson (v7 or newer) | Parsing the Open-Meteo JSON response |
 
 Compile-verified 2026-10-24 on arduino-esp32 2.0.17 (PlatformIO
-espressif32 6.9.0) and 3.3.12 (pioarduino platform 55.03.312-1, which
-needs PlatformIO Core 6.2 or newer).
+espressif32 6.9.0), the recommended core and the one `scripts/check.py`
+builds. Core 3.3.12 was also compiled once, by hand on one machine,
+through the community pioarduino platform (espressif32 6.9.0 ships
+core 2.0.17, so it cannot build 3.x). It needs PlatformIO Core 6.2 or
+newer, and the version string cannot go in `platform =` directly; use the
+release zip:
+
+```ini
+platform = https://github.com/pioarduino/platform-espressif32/releases/download/55.03.312-1/platform-espressif32.zip
+```
+
+Core 3.x builds fill about 91% of the default app partition, against
+about 72% on 2.0.17, so prefer 2.0.17 unless you need 3.x.
 Versions used: ArduinoJson 7.4.3, Adafruit SSD1306 2.5.17, Adafruit GFX
 1.13.0, DHT sensor library 1.4.7, Adafruit Unified Sensor 1.1.15.
 

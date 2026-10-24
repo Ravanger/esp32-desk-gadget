@@ -356,8 +356,10 @@ arduino-esp32 3.3.12, PlatformIO Core 6.2.0, board `esp32-c3-devkitm-1`
 with the same CDC flags, same library versions): default RAM 12.0%
 (39,376 bytes), Flash 91.0% (1,193,313 of 1,310,720 bytes); all options
 Flash 91.1% (1,193,927 bytes). Core 3.x builds are about 250 KB larger, so
-little room is left in the default app partition. This build is run by
-hand; scripts/check.py compiles core 2.0.17 only.
+little room is left in the default app partition, so 2.0.17 stays the
+recommended core. Single-machine result: run by hand once, not yet
+reproduced elsewhere; scripts/check.py compiles core 2.0.17 only.
+Platform line used: `platform = https://github.com/pioarduino/platform-espressif32/releases/download/55.03.312-1/platform-espressif32.zip`.
 
 ## What this audit could NOT verify
 

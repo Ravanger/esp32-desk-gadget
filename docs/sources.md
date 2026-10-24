@@ -136,17 +136,19 @@ All checked 2026-10-24. Figures taken from them are listed in
 ## Images
 
 All images are stored in `assets/` and credited here; none are
-hotlinked. Each is shown unmodified. Images without a stated licence
-are used with credit for this non-commercial guide; reuse permission
-was not separately obtained.
+hotlinked. Images without a stated licence are used with credit for
+this private, non-commercial guide; reuse permission was not
+separately obtained, and a credit here is not a licence. Before making
+the guide public or commercial, re-clear every unlicensed image and
+replace `supermini-pinout.jpg` (CC BY-NC-ND 4.0 bars commercial use).
 
 | Image | Used in | Credit and source |
 | ----- | ------- | ----------------- |
 | `supermini-pinout.jpg` | `parts.md`, `wiring.md` | Renzo Mischianti, CC BY-NC-ND 4.0 — <https://mischianti.org/esp32-c3-super-mini-high-resolution-pinout-datasheet-and-specs/> |
 | `oled-display.jpg` | `parts.md` | MakerGuides — <https://www.makerguides.com/simple-esp32-internet-weather-station/> |
 | `esp32-oled-wiring.png` | `wiring.md` | MakerGuides (four-wire pattern only; pin numbers differ on the SuperMini) — <https://www.makerguides.com/simple-esp32-internet-weather-station/> |
-| `breadboard.png` | `parts.md` | MakerGuides |
-| `jumper-wires.png` | `parts.md` | MakerGuides |
+| `breadboard.png` | `parts.md` | MakerGuides — <https://www.makerguides.com/wp-content/uploads/2019/05/Half_breadboard56a.png> |
+| `jumper-wires.png` | `parts.md` | MakerGuides — <https://www.makerguides.com/wp-content/uploads/2023/09/dupon_wire_set.png> |
 | `dht11-pinout.jpg` | `parts.md` | Components101 — <https://components101.com/sensors/dht11-temperature-sensor> |
 | `push-button-pinout.gif` | `parts.md`, `wiring.md` | Components101 — <https://components101.com/switches/push-button> |
 | `pir-pinout.png` | `parts.md`, `how-it-works.md` | Components101 — <https://components101.com/sensors/hc-sr501-pir-sensor> |
@@ -155,11 +157,11 @@ was not separately obtained.
 | `switch-bounce.png` | `how-it-works.md` | Pololu — <https://www.pololu.com/docs/0J16/4> |
 | `ntp-udp.png` | `how-it-works.md` | CircuitDigest (concept diagram, not wiring) — <https://circuitdigest.com/microcontroller-projects/esp32-internet-clock> |
 | `encoder-wiring.png` | `wiring.md` | LastMinuteEngineers — <https://lastminuteengineers.com/esp32-rotary-encoder-tutorial/> |
-| `encoder-pinout.png` | `wiring.md` | LastMinuteEngineers |
-| `encoder-internal.png` | `how-it-works.md` | LastMinuteEngineers |
-| `encoder-animation.gif` | `how-it-works.md` | LastMinuteEngineers |
-| `encoder-pulses-cw.png` | `how-it-works.md` | LastMinuteEngineers |
-| `encoder-pulses-ccw.png` | `how-it-works.md` | LastMinuteEngineers |
+| `encoder-pinout.png` | `wiring.md` | LastMinuteEngineers — <https://lastminuteengineers.com/rotary-encoder-arduino-tutorial/> |
+| `encoder-internal.png` | `how-it-works.md` | LastMinuteEngineers — <https://lastminuteengineers.com/rotary-encoder-arduino-tutorial/> |
+| `encoder-animation.gif` | `how-it-works.md` | LastMinuteEngineers — <https://lastminuteengineers.com/rotary-encoder-arduino-tutorial/> |
+| `encoder-pulses-cw.png` | `how-it-works.md` | LastMinuteEngineers — <https://lastminuteengineers.com/rotary-encoder-arduino-tutorial/> |
+| `encoder-pulses-ccw.png` | `how-it-works.md` | LastMinuteEngineers — <https://lastminuteengineers.com/rotary-encoder-arduino-tutorial/> |
 | `encoder-serial-monitor.png` | `build-order.md` | LastMinuteEngineers — <https://lastminuteengineers.com/esp32-rotary-encoder-tutorial/> |
 
 ### Deliberately excluded

@@ -2,8 +2,9 @@
 // ESP32 Desk Gadget — clock + indoor DHT11 + outdoor weather
 // Board: ESP32-C3 SuperMini. Arduino IDE: "ESP32C3 Dev Module" with
 // Tools > USB CDC On Boot: Enabled so Serial shows over the native USB-C
-// connection (compile-verified on arduino-esp32 2.0.17 and 3.3.12). On core
-// 3.x, "Nologo ESP32C3 Super Mini" (CDC on by default) is an alternative.
+// connection (compile-verified on arduino-esp32 2.0.17, the recommended core;
+// 3.3.12 compiled once by hand via pioarduino). "Nologo ESP32C3 Super Mini"
+// (core 3.x, CDC on by default) is untested.
 // OLED SSD1306 128x64 I2C (0x3C) | button pages (optional encoder) | pot dimming
 // Weather: Open-Meteo (no API key). Time: NTP, configurable zone.
 // See README.md and docs/ in this repo for wiring and build order.
