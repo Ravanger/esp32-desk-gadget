@@ -61,7 +61,8 @@ the device and are not re-exported back to Home Assistant.
      a recompile, like `USE_ENCODER` in the sketch.
    - `use_pir` — `false` for no PIR (default), `true` for a PIR on
      GPIO 0. Changing it needs a recompile, like `USE_PIR` in the
-     sketch.
+     sketch. The Motion entity appears in Home Assistant either way;
+     with `use_pir: false` it simply always reads off.
    - `wifi_tx_power` — `20dB` by default. If the board fails to join
      WiFi (a known SuperMini antenna weakness), try `8.5dB`, the
      ESPHome form of `WIFI_LOW_TX_POWER` in the sketch.
@@ -70,7 +71,10 @@ the device and are not re-exported back to Home Assistant.
    esphome config esphome/desk_gadget.yaml
    ```
    This needs `esphome/secrets.yaml` to exist with real values (the
-   example placeholders are refused on purpose).
+   example placeholders are refused on purpose). Recent ESPHome
+   releases warn that an OTA password costs flash and RAM and
+   suggest encryption instead. The warning is expected: the password
+   is kept so the YAML still works from ESPHome 2024.6.0.
 5. Flash it:
    ```
    esphome run esphome/desk_gadget.yaml
